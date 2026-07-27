@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Qur'an Path — Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Marcellus&family=Figtree:wght@400;500;600;700&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F6F1E5;
+  --paper-deep:#EFE7D4;
+  --night:#0F2B24;
+  --mihrab:#1E4D40;
+  --mihrab-soft:#2A6153;
+  --gold:#C4A24B;
+  --gold-soft:#E4D3A4;
+  --ink:#24312C;
+  --muted:#6E7A72;
+  --line:#DDD4BE;
+  --white:#FFFDF7;
+  --error:#A0522D;
+  --radius:14px;
+  --shadow:0 2px 10px rgba(15,43,36,.08);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  font-family:'Figtree',system-ui,sans-serif;
+  background:var(--paper);
+  color:var(--ink);
+  min-height:100vh;
+  line-height:1.5;
+}
+.arabic{font-family:'Amiri',serif;direction:rtl}
+h1,h2,h3,.display{font-family:'Marcellus',serif;font-weight:400;letter-spacing:.01em}
+button{font-family:inherit;cursor:pointer;border:none;background:none;font-size:1rem}
+button:focus-visible,a:focus-visible{outline:3px solid var(--gold);outline-offset:2px;border-radius:6px}
+.screen{display:none;max-width:960px;margin:0 auto;padding:0 20px 60px}
+.screen.active{display:block}
+@media (prefers-reduced-motion:no-preference){
+  .fade-in{animation:fadeUp .45s ease both}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+}
+
+/* ---------- Top bar ---------- */
+.topbar{
+  background:var(--night);
+  color:var(--paper);
+  padding:14px 20px;
+  display:flex;align-items:center;justify-content:space-between;
+  border-bottom:3px solid var(--gold);
+}
+.topbar .brand{font-family:'Marcellus',serif;font-size:1.15rem;display:flex;align-items:center;gap:10px}
+.brand .star{color:var(--gold);font-size:1.3rem}
+.topbar nav{display:flex;gap:6px}
+.topbar nav button{
+  color:var(--paper);opacity:.75;padding:6px 12px;border-radius:8px;font-size:.9rem;
+}
+.topbar nav button:hover{opacity:1;background:rgba(255,255,255,.08)}
+.topbar nav button.current{opacity:1;background:rgba(196,162,75,.18);color:var(--gold-soft)}
+@media(max-width:560px){.topbar nav button{padding:6px 8px;font-size:.82rem}}
+
+/* ---------- Dashboard ---------- */
+.greeting{margin:34px 0 4px;font-size:1.7rem;color:var(--night)}
+.motivation{color:var(--muted);font-style:italic;margin-bottom:28px;font-size:.98rem}
+.dash-grid{display:grid;grid-template-columns:1.6fr 1fr;gap:20px;align-items:start}
+@media(max-width:760px){.dash-grid{grid-template-columns:1fr}}
+
+.card{
+  background:var(--white);
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  padding:24px;
+}
+.today-card{
+  background:linear-gradient(160deg,var(--night),var(--mihrab));
+  color:var(--paper);
+  border:none;
+  position:relative;
+  overflow:hidden;
+}
+.today-card::after{
+  content:"۞";
+  position:absolute;right:-14px;bottom:-30px;
+  font-size:9rem;color:rgba(196,162,75,.14);line-height:1;
+}
+.eyebrow{
+  font-size:.75rem;text-transform:uppercase;letter-spacing:.14em;
+  color:var(--gold-soft);margin-bottom:10px;font-weight:600;
+}
+.card .eyebrow.dark{color:var(--mihrab)}
+.today-card h2{font-size:1.45rem;margin-bottom:8px}
+.today-meta{display:flex;gap:16px;flex-wrap:wrap;font-size:.9rem;opacity:.85;margin-bottom:20px}
+.btn{
+  display:inline-block;
+  background:var(--gold);color:var(--night);
+  font-weight:700;font-size:1rem;
+  padding:13px 30px;border-radius:10px;
+  transition:transform .12s ease, box-shadow .12s ease;
+}
+.btn:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(0,0,0,.2)}
+.btn:active{transform:none}
+.btn.secondary{background:transparent;color:var(--mihrab);border:2px solid var(--mihrab);font-weight:600}
+.btn.secondary:hover{background:var(--mihrab);color:var(--paper)}
+.btn:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none}
+
+.revision-card p{color:var(--muted);font-size:.95rem}
+.revision-card .eyebrow{color:var(--mihrab)}
+
+.progress-panel h3{margin-bottom:16px;color:var(--night);font-size:1.05rem}
+.stat{display:flex;justify-content:space-between;align-items:baseline;padding:10px 0;border-bottom:1px dashed var(--line);font-size:.93rem}
+.stat:last-child{border-bottom:none}
+.stat .label{color:var(--muted)}
+.stat .value{font-weight:700;color:var(--night)}
+.bar{height:8px;background:var(--paper-deep);border-radius:99px;margin-top:8px;overflow:hidden}
+.bar span{display:block;height:100%;width:60%;background:linear-gradient(90deg,var(--mihrab),var(--gold));border-radius:99px}
+.goal-msg{margin-top:14px;font-size:.9rem;color:var(--mihrab);font-weight:600}
+
+/* ---------- Lesson player ---------- */
+.lesson-header{
+  background:var(--night);color:var(--paper);
+  padding:14px 20px;
+  display:flex;align-items:center;gap:14px;
+  border-bottom:3px solid var(--gold);
+}
+.lesson-header .back{color:var(--paper);font-size:1.3rem;opacity:.8;padding:4px 8px}
+.lesson-header .back:hover{opacity:1}
+.lesson-header .title{flex:1;font-size:.98rem;font-family:'Marcellus',serif}
+.pill{background:rgba(196,162,75,.2);color:var(--gold-soft);font-size:.78rem;padding:4px 12px;border-radius:99px;font-weight:600;white-space:nowrap}
+
+/* tasbih bead progress */
+.beads{display:flex;justify-content:center;gap:14px;padding:22px 0 6px}
+.bead{width:12px;height:12px;border-radius:50%;background:var(--paper-deep);border:2px solid var(--line);transition:all .25s ease}
+.bead.done{background:var(--gold);border-color:var(--gold)}
+.bead.now{background:var(--mihrab);border-color:var(--mihrab);transform:scale(1.35)}
+
+.activity-wrap{max-width:620px;margin:0 auto;padding:10px 20px 40px}
+.activity{background:var(--white);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:30px;min-height:340px}
+.instruction{font-size:1.05rem;color:var(--night);margin-bottom:24px;font-weight:600}
+.big-arabic{font-size:4.2rem;text-align:center;line-height:1.6;color:var(--night);margin:10px 0 24px}
+
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:14px}
+.tile{
+  background:var(--paper);border:2px solid var(--line);border-radius:12px;
+  font-family:'Amiri',serif;font-size:2.6rem;padding:18px 10px;color:var(--ink);
+  transition:all .15s ease;
+}
+.tile:hover{border-color:var(--mihrab);background:var(--white)}
+.tile.correct{border-color:var(--mihrab);background:#E8F0EA;color:var(--mihrab)}
+.tile.wrong{border-color:var(--error);background:#F7ECE4;animation:shake .3s ease}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+@media (prefers-reduced-motion:reduce){.tile.wrong{animation:none}}
+
+.play-row{display:flex;justify-content:center;margin-bottom:24px}
+.play-btn{
+  display:flex;align-items:center;gap:10px;
+  background:var(--mihrab);color:var(--paper);
+  padding:12px 26px;border-radius:99px;font-weight:600;font-size:.95rem;
+  transition:background .15s ease;
+}
+.play-btn:hover{background:var(--mihrab-soft)}
+.play-btn.playing{background:var(--gold);color:var(--night)}
+.compare-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+.compare-row .option{display:flex;flex-direction:column;gap:12px;align-items:center;background:var(--paper);border:2px solid var(--line);border-radius:12px;padding:20px}
+.option .choose{background:var(--night);color:var(--paper);padding:9px 22px;border-radius:8px;font-weight:600}
+.option.correct{border-color:var(--mihrab);background:#E8F0EA}
+.option.wrong{border-color:var(--error);background:#F7EDE4}
+
+.feedback{margin-top:20px;font-size:.95rem;font-weight:600;min-height:24px}
+.feedback.good{color:var(--mihrab)}
+.feedback.bad{color:var(--error)}
+.hint{font-size:.83rem;color:var(--muted);margin-top:16px}
+
+.record-row{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;align-items:center}
+.rec-btn{background:var(--error);color:#fff;padding:12px 26px;border-radius:99px;font-weight:700}
+.rec-btn.recording{background:var(--night);animation:pulse 1.2s infinite}
+@keyframes pulse{50%{opacity:.7}}
+@media (prefers-reduced-motion:reduce){.rec-btn.recording{animation:none}}
+.timer{font-variant-numeric:tabular-nums;font-weight:700;color:var(--night);min-width:52px;text-align:center}
+
+.mcq{display:flex;flex-direction:column;gap:12px}
+.mcq button{
+  text-align:left;background:var(--paper);border:2px solid var(--line);border-radius:10px;
+  padding:14px 18px;font-size:.98rem;transition:all .15s ease;
+}
+.mcq button:hover{border-color:var(--mihrab)}
+.mcq button.correct{border-color:var(--mihrab);background:#E8F0EA;font-weight:700}
+.mcq button.wrong{border-color:var(--error);background:#F7EDE4}
+
+.lesson-footer{max-width:620px;margin:0 auto;padding:0 20px 50px;display:flex;justify-content:space-between;align-items:center}
+.nav-btn{color:var(--mihrab);font-weight:700;padding:10px 18px;border-radius:8px}
+.nav-btn:hover:not(:disabled){background:var(--paper-deep)}
+.nav-btn:disabled{color:var(--muted);opacity:.45;cursor:not-allowed}
+.help-link{font-size:.83rem;color:var(--muted);text-decoration:underline;background:none}
+
+/* intro + completion */
+.center-block{text-align:center;padding:20px 0}
+.center-block .star-big{font-size:3rem;color:var(--gold);display:block;margin-bottom:14px}
+.center-block h2{font-size:1.5rem;color:var(--night);margin-bottom:14px}
+.center-block p{color:var(--muted);max-width:420px;margin:0 auto 10px;font-size:.98rem}
+.xp-line{font-family:'Marcellus',serif;font-size:2.2rem;color:var(--mihrab);margin:18px 0 6px}
+.streak-line{color:var(--gold);font-weight:700;margin-bottom:22px}
+.dua{font-style:italic;color:var(--muted);margin:18px auto 26px;max-width:380px}
+
+.toast{
+  position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(80px);
+  background:var(--night);color:var(--paper);padding:12px 22px;border-radius:10px;
+  font-size:.9rem;box-shadow:0 6px 20px rgba(0,0,0,.25);opacity:0;
+  transition:all .3s ease;pointer-events:none;max-width:90vw;text-align:center;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.proto-note{
+  max-width:960px;margin:26px auto 0;padding:0 20px;
+  font-size:.8rem;color:var(--muted);
+}
+</style>
+</head>
+<body>
+
+<!-- ============ DASHBOARD ============ -->
+<div id="screen-dashboard" class="screen active">
+  <header class="topbar">
+    <div class="brand"><span class="star">۞</span> Qur'an Path</div>
+    <nav>
+      <button class="current">Dashboard</button>
+      <button onclick="toast('Paths coming in the full build')">Paths</button>
+      <button onclick="toast('Settings coming in the full build')">Settings</button>
+      <button onclick="toast('Help coming in the full build')">Help</button>
+    </nav>
+  </header>
+
+  <h1 class="greeting fade-in">Assalamu alaikum, Ash</h1>
+  <p class="motivation fade-in" id="motivation"></p>
+
+  <div class="dash-grid">
+    <div style="display:flex;flex-direction:column;gap:20px">
+      <section class="card today-card fade-in">
+        <div class="eyebrow">Today's Step · Current module: Short Vowels (Fatha)</div>
+        <h2>Short Vowels — Fatha Practice 1</h2>
+        <div class="today-meta">
+          <span>⏱ Approx. 7 minutes</span>
+          <span>✦ Earn ~15–20 XP</span>
+        </div>
+        <button class="btn" onclick="startStep()">Start Step</button>
+      </section>
+
+      <section class="card revision-card fade-in">
+        <div class="eyebrow dark">Revision</div>
+        <p>No revision due today. Keep going with your Path.</p>
+      </section>
+    </div>
+
+    <aside class="card progress-panel fade-in">
+      <h3>Your progress</h3>
+      <div class="stat"><span class="label">Current Path</span><span class="value">Beginner Reading</span></div>
+      <div class="stat">
+        <div style="width:100%">
+          <div style="display:flex;justify-content:space-between"><span class="label">Short Vowels</span><span class="value">60%</span></div>
+          <div class="bar"><span></span></div>
+        </div>
+      </div>
+      <div class="stat"><span class="label">Sessions this week</span><span class="value" id="dash-sessions">3 of 4</span></div>
+      <div class="stat"><span class="label">XP this week</span><span class="value" id="dash-xp">72 XP</span></div>
+      <div class="stat"><span class="label">Streak</span><span class="value" id="dash-streak">5 days ✦</span></div>
+      <p class="goal-msg" id="goal-msg">1 more session to hit your goal this week.</p>
+    </aside>
+  </div>
+
+  <p class="proto-note">Prototype note: audio uses your device's built-in Arabic voice where available, and nothing is saved between visits. The real app will use recorded recitation audio.</p>
+</div>
+
+<!-- ============ LESSON PLAYER ============ -->
+<div id="screen-lesson" class="screen">
+  <header class="lesson-header">
+    <button class="back" onclick="confirmExit()" aria-label="Back to dashboard">←</button>
+    <div class="title">Short Vowels — Fatha Practice 1</div>
+    <div class="pill" id="progress-pill">Activity 1 of 5</div>
+  </header>
+
+  <div class="beads" id="beads" aria-hidden="true"></div>
+
+  <div class="activity-wrap">
+    <div class="activity fade-in" id="activity-area"></div>
+  </div>
+
+  <div class="lesson-footer">
+    <button class="nav-btn" id="btn-prev" onclick="prevActivity()">← Previous</button>
+    <button class="help-link" onclick="toast('In the full app this opens a short help guide')">Need help?</button>
+    <button class="nav-btn" id="btn-next" onclick="nextActivity()" disabled>Next →</button>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+/* =========================================================
+   Qur'an Path — clickable prototype (no backend, no saving)
+   ========================================================= */
+
+const motivations = [
+  "One small step with sincerity is better than a rushed mile.",
+  "Allah loves consistent deeds, even if small.",
+  "Your Qur'an journey is between you and Allah alone."
+];
+document.getElementById('motivation').textContent =
+  motivations[Math.floor(Math.random() * motivations.length)];
+
+/* ---------- tiny helpers ---------- */
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._h);
+  t._h = setTimeout(() => t.classList.remove('show'), 2600);
+}
+function show(id){
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+
+/* ---------- audio (device Arabic voice, graceful fallback) ---------- */
+let arVoice = null;
+function loadVoices(){
+  const v = speechSynthesis.getVoices();
+  arVoice = v.find(x => x.lang && x.lang.startsWith('ar')) || null;
+}
+if ('speechSynthesis' in window){
+  loadVoices();
+  speechSynthesis.onvoiceschanged = loadVoices;
+}
+function playArabic(text, btn){
+  if (!('speechSynthesis' in window)){
+    toast('Audio placeholder — real recitation audio comes in the full app');
+    return;
+  }
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'ar-SA';
+  u.rate = 0.75;
+  if (arVoice) u.voice = arVoice;
+  if (btn){
+    btn.classList.add('playing');
+    u.onend = () => btn.classList.remove('playing');
+    u.onerror = () => btn.classList.remove('playing');
+  }
+  speechSynthesis.speak(u);
+  if (!arVoice) toast('No Arabic voice found on this device — audio is approximate in the prototype');
+}
+
+/* ---------- lesson state ---------- */
+const TOTAL = 5;            // activities in this step
+let current = 0;            // 0-based index
+const completed = new Array(TOTAL).fill(false);
+let earnedXP = 0;
+
+function startStep(){
+  current = 0;
+  completed.fill(false);
+  earnedXP = 0;
+  show('screen-lesson');
+  renderActivity();
+}
+function confirmExit(){
+  if (completed.some(Boolean) && !completed.every(Boolean)){
+    if (!confirm('Leave this Step? Your progress in it will be lost.')) return;
+  }
+  speechSynthesis.cancel && speechSynthesis.cancel();
+  show('screen-dashboard');
+}
+function renderBeads(){
+  const b = document.getElementById('beads');
+  b.innerHTML = '';
+  for (let i = 0; i < TOTAL; i++){
+    const d = document.createElement('div');
+    d.className = 'bead' + (completed[i] ? ' done' : '') + (i === current ? ' now' : '');
+    b.appendChild(d);
+  }
+}
+function setNav(){
+  document.getElementById('btn-prev').disabled = (current === 0);
+  document.getElementById('btn-next').disabled = !completed[current];
+  document.getElementById('progress-pill').textContent =
+    'Activity ' + (current + 1) + ' of ' + TOTAL;
+}
+function markDone(xp){
+  if (!completed[current]){
+    completed[current] = true;
+    earnedXP += xp;
+  }
+  setNav();
+  renderBeads();
+}
+function nextActivity(){
+  if (!completed[current]) return;
+  if (current === TOTAL - 1){ renderCompletion(); return; }
+  current++;
+  renderActivity();
+}
+function prevActivity(){
+  if (current === 0) return;
+  current--;
+  renderActivity();
+}
+function renderActivity(){
+  speechSynthesis.cancel && speechSynthesis.cancel();
+  renderBeads();
+  setNav();
+  const area = document.getElementById('activity-area');
+  area.classList.remove('fade-in'); void area.offsetWidth; area.classList.add('fade-in');
+  activities[current](area);
+}
+
+/* =========================================================
+   ACTIVITIES
+   ========================================================= */
+const activities = [
+
+/* --- 1. Intro --- */
+function(area){
+  area.innerHTML = `
+    <div class="center-block">
+      <span class="star-big">۞</span>
+      <h2>Fatha Practice 1</h2>
+      <p>Today we'll practise the short vowel Fatha ( َ ) on a few letters.
+         You'll listen, tap, compare and recite. It'll take about 7 minutes.</p>
+      <button class="btn" style="margin-top:18px" onclick="markDone(0); nextActivity()">Begin</button>
+    </div>`;
+  markDone(0);
+  document.getElementById('btn-next').disabled = false;
+},
+
+/* --- 2. Listen & Tap --- */
+function(area){
+  const target = 'بَ';
+  const options = ['تَ','بَ','نَ','ثَ'];
+  area.innerHTML = `
+    <p class="instruction">Listen, then tap the matching letter.</p>
+    <div class="play-row">
+      <button class="play-btn" id="lt-play">▶ Play sound</button>
+    </div>
+    <div class="tiles" id="lt-tiles"></div>
+    <div class="feedback" id="lt-fb"></div>
+    <p class="hint">Tip: Fatha is the small stroke above the letter, giving an "a" sound.</p>`;
+  const playBtn = document.getElementById('lt-play');
+  playBtn.onclick = () => playArabic(target, playBtn);
+  const tilesEl = document.getElementById('lt-tiles');
+  options.forEach(opt => {
+    const b = document.createElement('button');
+    b.className = 'tile arabic';
+    b.textContent = opt;
+    b.onclick = () => {
+      if (completed[current]) return;
+      const fb = document.getElementById('lt-fb');
+      if (opt === target){
+        b.classList.add('correct');
+        fb.textContent = 'Correct, that was بَ.';
+        fb.className = 'feedback good';
+        markDone(4);
+      } else {
+        b.classList.add('wrong');
+        fb.textContent = 'Not quite — listen again and try one more time.';
+        fb.className = 'feedback bad';
+        setTimeout(() => b.classList.remove('wrong'), 500);
+      }
+    };
+    tilesEl.appendChild(b);
+  });
+},
+
+/* --- 3. Compare Two Sounds --- */
+function(area){
+  area.innerHTML = `
+    <p class="instruction">Listen to both sounds. Which one is <span class="arabic" style="font-size:1.5rem">صَ</span> ?</p>
+    <div class="compare-row">
+      <div class="option" id="cmp-a">
+        <button class="play-btn" id="cmp-play-a">▶ Sound A</button>
+        <button class="choose" onclick="compareChoose('a')">Choose A</button>
+      </div>
+      <div class="option" id="cmp-b">
+        <button class="play-btn" id="cmp-play-b">▶ Sound B</button>
+        <button class="choose" onclick="compareChoose('b')">Choose B</button>
+      </div>
+    </div>
+    <div class="feedback" id="cmp-fb"></div>
+    <p class="hint">ص is the heavier, deeper cousin of س. Listen for the fuller sound.</p>`;
+  document.getElementById('cmp-play-a').onclick =
+    e => playArabic('سَ', e.currentTarget);
+  document.getElementById('cmp-play-b').onclick =
+    e => playArabic('صَ', e.currentTarget);
+},
+];
+
+function compareChoose(which){
+  if (completed[current]) return;
+  const fb = document.getElementById('cmp-fb');
+  if (which === 'b'){
+    document.getElementById('cmp-b').classList.add('correct');
+    fb.textContent = 'Correct — B was صَ, the heavy letter.';
+    fb.className = 'feedback good';
+    markDone(4);
+  } else {
+    document.getElementById('cmp-a').classList.add('wrong');
+    fb.textContent = 'Not quite — that was سَ. Listen to both once more.';
+    fb.className = 'feedback bad';
+    setTimeout(() => document.getElementById('cmp-a').classList.remove('wrong'), 600);
+  }
+}
+
+/* --- 4. Repeat After Me (real mic where allowed) --- */
+activities.push(function(area){
+  area.innerHTML = `
+    <p class="instruction">Listen, then record yourself repeating:</p>
+    <div class="big-arabic arabic">بَ &nbsp; بِ &nbsp; بُ</div>
+    <div class="play-row">
+      <button class="play-btn" id="ram-play">▶ Play example</button>
+    </div>
+    <div class="record-row">
+      <button class="rec-btn" id="ram-rec">● Record</button>
+      <span class="timer" id="ram-timer">00:00</span>
+      <button class="btn secondary" id="ram-playback" style="display:none">▶ Play your recitation</button>
+    </div>
+    <div class="feedback" id="ram-fb"></div>
+    <p class="hint">In the prototype nothing is uploaded — your recording stays on this device.</p>`;
+  document.getElementById('ram-play').onclick =
+    e => playArabic('بَ بِ بُ', e.currentTarget);
+  setupRecorder();
+});
+
+let mediaRecorder = null, chunks = [], recTimer = null, recSeconds = 0, lastAudioURL = null;
+function setupRecorder(){
+  const recBtn = document.getElementById('ram-rec');
+  const timerEl = document.getElementById('ram-timer');
+  const pbBtn = document.getElementById('ram-playback');
+  const fb = document.getElementById('ram-fb');
+
+  recBtn.onclick = async () => {
+    /* stop if currently recording */
+    if (mediaRecorder && mediaRecorder.state === 'recording'){
+      mediaRecorder.stop();
+      return;
+    }
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+      fb.textContent = 'Recording is not supported in this browser — marked as done for the prototype.';
+      fb.className = 'feedback good';
+      markDone(6);
+      return;
+    }
+    try{
+      const stream = await navigator.mediaDevices.getUserMedia({ audio:true });
+      chunks = [];
+      mediaRecorder = new MediaRecorder(stream);
+      mediaRecorder.ondataavailable = e => chunks.push(e.data);
+      mediaRecorder.onstop = () => {
+        clearInterval(recTimer);
+        stream.getTracks().forEach(t => t.stop());
+        recBtn.textContent = '● Record again';
+        recBtn.classList.remove('recording');
+        const blob = new Blob(chunks, { type:'audio/webm' });
+        if (lastAudioURL) URL.revokeObjectURL(lastAudioURL);
+        lastAudioURL = URL.createObjectURL(blob);
+        pbBtn.style.display = 'inline-block';
+        pbBtn.onclick = () => new Audio(lastAudioURL).play();
+        fb.textContent = 'Recitation saved on this device. Well done.';
+        fb.className = 'feedback good';
+        markDone(6);
+      };
+      mediaRecorder.start();
+      recSeconds = 0;
+      timerEl.textContent = '00:00';
+      recBtn.textContent = '■ Stop';
+      recBtn.classList.add('recording');
+      fb.textContent = '';
+      recTimer = setInterval(() => {
+        recSeconds++;
+        const m = String(Math.floor(recSeconds/60)).padStart(2,'0');
+        const s = String(recSeconds%60).padStart(2,'0');
+        timerEl.textContent = m + ':' + s;
+      }, 1000);
+    } catch(err){
+      fb.innerHTML = 'We need microphone permission to record your recitation. Click "Allow" in your browser settings — or tap below to continue without recording.';
+      fb.className = 'feedback bad';
+      if (!document.getElementById('ram-skip')){
+        const skip = document.createElement('button');
+        skip.id = 'ram-skip';
+        skip.className = 'btn secondary';
+        skip.style.marginTop = '14px';
+        skip.textContent = 'Continue without recording';
+        skip.onclick = () => { fb.textContent=''; markDone(3); toast('Marked as done for the prototype'); };
+        fb.after(skip);
+      }
+    }
+  };
+}
+
+/* --- 5. Meaning Selection --- */
+activities.push(function(area){
+  area.innerHTML = `
+    <p class="instruction">What does "Ikhlas" relate to?</p>
+    <div class="mcq" id="mcq"></div>
+    <div class="feedback" id="mcq-fb"></div>`;
+  const opts = [
+    { t:'A) Sincerity', ok:true  },
+    { t:'B) Patience',  ok:false },
+    { t:'C) Fear',      ok:false }
+  ];
+  const wrap = document.getElementById('mcq');
+  opts.forEach(o => {
+    const b = document.createElement('button');
+    b.textContent = o.t;
+    b.onclick = () => {
+      if (completed[current]) return;
+      const fb = document.getElementById('mcq-fb');
+      if (o.ok){
+        b.classList.add('correct');
+        fb.textContent = 'Ikhlas is sincerity — purity of intention.';
+        fb.className = 'feedback good';
+        markDone(4);
+      } else {
+        b.classList.add('wrong');
+        fb.textContent = 'Not this one — try again.';
+        fb.className = 'feedback bad';
+        setTimeout(() => b.classList.remove('wrong'), 600);
+      }
+    };
+    wrap.appendChild(b);
+  });
+});
+
+/* --- Completion screen --- */
+function renderCompletion(){
+  renderBeads();
+  const area = document.getElementById('activity-area');
+  area.classList.remove('fade-in'); void area.offsetWidth; area.classList.add('fade-in');
+  area.innerHTML = `
+    <div class="center-block">
+      <span class="star-big">۞</span>
+      <h2>Step complete — well done.</h2>
+      <div class="xp-line">+${earnedXP} XP</div>
+      <div class="streak-line">✦ You've maintained your streak for 5 days</div>
+      <p>Next Step available tomorrow, or you can review this one again.</p>
+      <p class="dua">May Allah accept your effort.</p>
+      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+        <button class="btn" onclick="finishToDashboard()">Back to Dashboard</button>
+        <button class="btn secondary" onclick="startStep()">Review this Step again</button>
+      </div>
+    </div>`;
+  document.getElementById('btn-next').disabled = true;
+  document.getElementById('btn-prev').disabled = true;
+}
+function finishToDashboard(){
+  /* reflect the finished session on the dashboard (in-memory only) */
+  document.getElementById('dash-sessions').textContent = '4 of 4';
+  document.getElementById('dash-xp').textContent = (72 + earnedXP) + ' XP';
+  document.getElementById('dash-streak').textContent = '6 days ✦';
+  document.getElementById('goal-msg').textContent = "You've hit your weekly goal 🙌";
+  show('screen-dashboard');
+}
+</script>
+</body>
+</html>

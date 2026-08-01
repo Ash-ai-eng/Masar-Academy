@@ -1,0 +1,1506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Masar Academy — v4</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Marcellus&family=Figtree:wght@400;500;600;700&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F6F1E5;
+  --paper-deep:#EFE7D4;
+  --night:#0F2B24;
+  --mihrab:#1E4D40;
+  --mihrab-soft:#2A6153;
+  --gold:#C4A24B;
+  --gold-soft:#E4D3A4;
+  --ink:#24312C;
+  --muted:#6E7A72;
+  --line:#DDD4BE;
+  --white:#FFFDF7;
+  --error:#A0522D;
+  --radius:14px;
+  --shadow:0 2px 10px rgba(15,43,36,.08);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{font-family:'Figtree',system-ui,sans-serif;background:var(--paper);color:var(--ink);min-height:100vh;line-height:1.55}
+.arabic{font-family:'Amiri',serif;direction:rtl}
+h1,h2,h3{font-family:'Marcellus',serif;font-weight:400;letter-spacing:.01em}
+button{font-family:inherit;cursor:pointer;border:none;background:none;font-size:1rem}
+button:focus-visible{outline:3px solid var(--gold);outline-offset:2px;border-radius:6px}
+.screen{display:none;max-width:960px;margin:0 auto;padding:0 20px 60px}
+.screen.active{display:block}
+@media (prefers-reduced-motion:no-preference){
+  .fade-in{animation:fadeUp .4s ease both}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+}
+
+/* ---------- Top bar ---------- */
+.topbar{background:var(--night);color:var(--paper);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:3px solid var(--gold)}
+.topbar .brand{font-family:'Marcellus',serif;font-size:1.15rem;display:flex;align-items:center;gap:10px}
+.brand .star{color:var(--gold);font-size:1.3rem}
+.topbar nav{display:flex;gap:6px}
+.topbar nav button{color:var(--paper);opacity:.75;padding:6px 12px;border-radius:8px;font-size:.9rem}
+.topbar nav button:hover{opacity:1;background:rgba(255,255,255,.08)}
+.topbar nav button.current{opacity:1;background:rgba(196,162,75,.18);color:var(--gold-soft)}
+@media(max-width:560px){.topbar nav button{padding:6px 8px;font-size:.82rem}.topbar .brand{font-size:1rem}}
+
+/* ---------- shared ---------- */
+.card{background:var(--white);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:24px}
+.eyebrow{font-size:.75rem;text-transform:uppercase;letter-spacing:.14em;color:var(--gold-soft);margin-bottom:10px;font-weight:600}
+.eyebrow.dark{color:var(--mihrab)}
+.btn{display:inline-block;background:var(--gold);color:var(--night);font-weight:700;font-size:1rem;padding:13px 30px;border-radius:10px;transition:transform .12s ease, box-shadow .12s ease}
+.btn:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(0,0,0,.2)}
+.btn:active{transform:none}
+.btn.secondary{background:transparent;color:var(--mihrab);border:2px solid var(--mihrab);font-weight:600}
+.btn.secondary:hover{background:var(--mihrab);color:var(--paper)}
+.btn:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none}
+.chips{display:flex;flex-wrap:wrap;gap:10px;margin:14px 0}
+.chip{background:var(--paper);border:1px solid var(--line);border-radius:99px;padding:6px 14px;font-size:.82rem;color:var(--ink);font-weight:600}
+.chip b{color:var(--mihrab)}
+.obj-list{list-style:none;margin:10px 0 0}
+.obj-list li{padding:7px 0 7px 30px;position:relative;font-size:.95rem}
+.obj-list li::before{content:"✓";position:absolute;left:4px;color:var(--gold);font-weight:700}
+.bar{height:8px;background:var(--paper-deep);border-radius:99px;margin-top:8px;overflow:hidden}
+.bar span{display:block;height:100%;background:linear-gradient(90deg,var(--mihrab),var(--gold));border-radius:99px;transition:width .4s ease}
+.back-link{color:var(--mihrab);font-weight:700;font-size:.9rem;margin:22px 0 0;display:inline-block}
+
+/* ---------- Dashboard ---------- */
+.greeting{margin:34px 0 4px;font-size:1.7rem;color:var(--night)}
+.motivation{color:var(--muted);font-style:italic;margin-bottom:28px;font-size:.98rem}
+.dash-grid{display:grid;grid-template-columns:1.6fr 1fr;gap:20px;align-items:start}
+@media(max-width:760px){.dash-grid{grid-template-columns:1fr}}
+.today-card{background:linear-gradient(160deg,var(--night),var(--mihrab));color:var(--paper);border:none;position:relative;overflow:hidden}
+.today-card::after{content:"۞";position:absolute;right:-14px;bottom:-30px;font-size:9rem;color:rgba(196,162,75,.14);line-height:1}
+.today-card h2{font-size:1.45rem;margin-bottom:8px}
+.today-meta{display:flex;gap:16px;flex-wrap:wrap;font-size:.9rem;opacity:.85;margin-bottom:20px}
+.revision-card p{color:var(--muted);font-size:.95rem}
+.progress-panel h3{margin-bottom:16px;color:var(--night);font-size:1.05rem}
+.stat{display:flex;justify-content:space-between;align-items:baseline;padding:10px 0;border-bottom:1px dashed var(--line);font-size:.93rem}
+.stat:last-child{border-bottom:none}
+.stat .label{color:var(--muted)}
+.stat .value{font-weight:700;color:var(--night)}
+.goal-msg{margin-top:14px;font-size:.9rem;color:var(--mihrab);font-weight:600}
+
+/* ---------- Paths ---------- */
+.paths-title{margin:34px 0 18px;font-size:1.6rem;color:var(--night)}
+.summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:14px}
+@media(max-width:560px){.summary-grid{grid-template-columns:1fr}}
+.summary-item .s-label{font-size:.82rem;color:var(--muted);display:flex;justify-content:space-between;font-weight:600}
+.module-list{display:flex;flex-direction:column;gap:10px;margin-top:16px}
+.module-row{display:flex;align-items:center;gap:14px;background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.module-row .m-ic{font-size:1.2rem;width:28px;text-align:center;color:var(--mihrab)}
+.module-row .m-name{flex:1;font-weight:600;color:var(--night)}
+.module-row .m-sub{font-size:.82rem;color:var(--muted);font-weight:400}
+.module-row.locked{opacity:.55}
+.module-row.current{border-color:var(--gold);background:var(--white);box-shadow:var(--shadow)}
+.step-list{display:flex;flex-direction:column;gap:8px;margin-top:14px}
+.step-row{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:12px 14px;transition:border-color .15s ease}
+.step-row:hover:not(.locked){border-color:var(--mihrab)}
+.step-row .s-ic{width:26px;text-align:center;font-size:1rem}
+.step-row .s-name{flex:1;font-size:.95rem;color:var(--night)}
+.step-row .s-meta{font-size:.78rem;color:var(--muted);text-align:right}
+.step-row.done .s-ic{color:var(--mihrab)}
+.step-row.now{border-color:var(--gold);background:var(--white)}
+.step-row.locked{opacity:.5;cursor:not-allowed}
+.coming-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;margin-top:16px}
+.coming-card{background:var(--paper);border:1px dashed var(--line);border-radius:12px;padding:18px;color:var(--muted)}
+.coming-card b{display:block;color:var(--ink);margin-bottom:6px;font-weight:600}
+.coming-card span{font-size:.8rem}
+
+/* ---------- Course intro & step overview ---------- */
+.hero-card{background:linear-gradient(160deg,var(--night),var(--mihrab));color:var(--paper);border:none;position:relative;overflow:hidden;margin-top:26px}
+.hero-card::after{content:"۞";position:absolute;right:-20px;top:-30px;font-size:11rem;color:rgba(196,162,75,.12);line-height:1}
+.hero-card h1{font-size:1.7rem;margin-bottom:10px;color:var(--paper)}
+.hero-card p{opacity:.9;max-width:560px;font-size:.98rem}
+.section-h{margin:26px 0 4px;font-size:1.15rem;color:var(--night)}
+.ov-status{font-weight:700;font-size:.9rem;margin-top:6px}
+.ov-status.done{color:var(--mihrab)}
+.ov-status.progress{color:var(--gold)}
+.ov-status.new{color:var(--muted)}
+
+/* ---------- Lesson player ---------- */
+.lesson-header{background:var(--night);color:var(--paper);padding:14px 20px;display:flex;align-items:center;gap:14px;border-bottom:3px solid var(--gold)}
+.lesson-header .back{color:var(--paper);font-size:1.3rem;opacity:.8;padding:4px 8px}
+.lesson-header .back:hover{opacity:1}
+.lesson-header .title{flex:1;font-size:.95rem;font-family:'Marcellus',serif}
+.pill{background:rgba(196,162,75,.2);color:var(--gold-soft);font-size:.78rem;padding:4px 12px;border-radius:99px;font-weight:600;white-space:nowrap}
+.pill.phase{background:rgba(255,255,255,.12);color:var(--paper)}
+.beads{display:flex;justify-content:center;gap:14px;padding:22px 0 6px}
+.bead{width:12px;height:12px;border-radius:50%;background:var(--paper-deep);border:2px solid var(--line);transition:all .25s ease}
+.bead.done{background:var(--gold);border-color:var(--gold)}
+.bead.now{background:var(--mihrab);border-color:var(--mihrab);transform:scale(1.35)}
+.activity-wrap{max-width:620px;margin:0 auto;padding:10px 20px 40px}
+.activity{background:var(--white);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:30px;min-height:340px}
+.instruction{font-size:1.05rem;color:var(--night);margin-bottom:24px;font-weight:600}
+.big-arabic{font-size:4rem;text-align:center;line-height:1.7;color:var(--night);margin:6px 0 22px}
+.teach h2{font-size:1.35rem;color:var(--night);margin-bottom:14px}
+.teach p{color:var(--ink);font-size:.98rem;margin-bottom:12px}
+.teach .note{color:var(--muted);font-size:.88rem;font-style:italic}
+.ex-grid{display:flex;flex-direction:column;gap:10px;margin:18px 0}
+.ex-row{display:flex;align-items:center;justify-content:space-between;gap:14px;background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:10px 16px}
+.ex-row .ex-ar{font-family:'Amiri',serif;font-size:2.2rem;color:var(--night);direction:rtl}
+.ex-row .ex-label{flex:1;font-size:.86rem;color:var(--muted)}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:14px}
+.tile{background:var(--paper);border:2px solid var(--line);border-radius:12px;font-family:'Amiri',serif;font-size:2.4rem;padding:16px 8px;color:var(--ink);transition:all .15s ease}
+.tile:hover{border-color:var(--mihrab);background:var(--white)}
+.tile.correct{border-color:var(--mihrab);background:#E8F0EA;color:var(--mihrab)}
+.tile.wrong{border-color:var(--error);background:#F7ECE4;animation:shake .3s ease}
+.tile.selected{border-color:var(--gold);background:#FBF6E8}
+.tile.locked-in{border-color:var(--mihrab);background:#E8F0EA;color:var(--mihrab);pointer-events:none}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+@media (prefers-reduced-motion:reduce){.tile.wrong{animation:none}.rec-btn.recording{animation:none}}
+.play-row{display:flex;justify-content:center;margin-bottom:22px}
+.play-btn{display:flex;align-items:center;gap:10px;background:var(--mihrab);color:var(--paper);padding:12px 26px;border-radius:99px;font-weight:600;font-size:.95rem;transition:background .15s ease}
+.play-btn:hover{background:var(--mihrab-soft)}
+.play-btn.playing{background:var(--gold);color:var(--night)}
+.play-btn.small{padding:8px 14px;font-size:.82rem}
+.compare-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+.compare-row .option{display:flex;flex-direction:column;gap:12px;align-items:center;background:var(--paper);border:2px solid var(--line);border-radius:12px;padding:20px}
+.option .choose{background:var(--night);color:var(--paper);padding:9px 22px;border-radius:8px;font-weight:600}
+.option.correct{border-color:var(--mihrab);background:#E8F0EA}
+.option.wrong{border-color:var(--error);background:#F7EDE4}
+.match-cols{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.match-cols .col{display:flex;flex-direction:column;gap:12px}
+.builder-slots{display:flex;justify-content:center;gap:10px;direction:rtl;margin-bottom:20px;min-height:78px}
+.slot{width:70px;height:74px;border:2px dashed var(--line);border-radius:12px;display:flex;align-items:center;justify-content:center;font-family:'Amiri',serif;font-size:2.2rem;background:var(--paper);color:var(--night)}
+.slot.filled{border-style:solid;border-color:var(--mihrab);background:#E8F0EA}
+.builder-result{text-align:center;font-family:'Amiri',serif;font-size:3rem;color:var(--mihrab);min-height:60px;margin-bottom:8px}
+.sub-label{font-size:.8rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-weight:600;margin:14px 0 8px;text-align:center}
+.feedback{margin-top:18px;font-size:.95rem;font-weight:600;min-height:24px}
+.feedback.good{color:var(--mihrab)}
+.feedback.bad{color:var(--error)}
+.hint{font-size:.83rem;color:var(--muted);margin-top:14px}
+.record-row{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;align-items:center}
+.rec-btn{background:var(--error);color:#fff;padding:12px 26px;border-radius:99px;font-weight:700}
+.rec-btn.recording{background:var(--night);animation:pulse 1.2s infinite}
+@keyframes pulse{50%{opacity:.7}}
+.timer{font-variant-numeric:tabular-nums;font-weight:700;color:var(--night);min-width:52px;text-align:center}
+.mcq{display:flex;flex-direction:column;gap:12px}
+.mcq button{text-align:left;background:var(--paper);border:2px solid var(--line);border-radius:10px;padding:14px 18px;font-size:.98rem;transition:all .15s ease}
+.mcq button:hover{border-color:var(--mihrab)}
+.mcq button.correct{border-color:var(--mihrab);background:#E8F0EA;font-weight:700}
+.mcq button.wrong{border-color:var(--error);background:#F7EDE4}
+.lesson-footer{max-width:620px;margin:0 auto;padding:0 20px 50px;display:flex;justify-content:space-between;align-items:center}
+.nav-btn{color:var(--mihrab);font-weight:700;padding:10px 18px;border-radius:8px}
+.nav-btn:hover:not(:disabled){background:var(--paper-deep)}
+.nav-btn:disabled{color:var(--muted);opacity:.45;cursor:not-allowed}
+.help-link{font-size:.83rem;color:var(--muted);text-decoration:underline}
+.center-block{text-align:center;padding:20px 0}
+.center-block .star-big{font-size:3rem;color:var(--gold);display:block;margin-bottom:14px}
+.center-block h2{font-size:1.5rem;color:var(--night);margin-bottom:14px}
+.center-block p{color:var(--muted);max-width:440px;margin:0 auto 10px;font-size:.98rem}
+.xp-line{font-family:'Marcellus',serif;font-size:2.2rem;color:var(--mihrab);margin:18px 0 6px}
+.streak-line{color:var(--gold);font-weight:700;margin-bottom:22px}
+.dua{font-style:italic;color:var(--muted);margin:18px auto 26px;max-width:380px}
+.toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(80px);background:var(--night);color:var(--paper);padding:12px 22px;border-radius:10px;font-size:.9rem;box-shadow:0 6px 20px rgba(0,0,0,.25);opacity:0;transition:all .3s ease;pointer-events:none;max-width:90vw;text-align:center}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.proto-note{max-width:960px;margin:26px auto 0;padding:0 20px;font-size:.8rem;color:var(--muted)}
+/* ---------- auth ---------- */
+.auth-wrap{max-width:440px;margin:60px auto 0}
+.auth-card{text-align:center}
+.auth-card .star-big{font-size:3rem;color:var(--gold);display:block;margin-bottom:10px}
+.auth-card h1{font-size:1.5rem;color:var(--night);margin-bottom:10px}
+.auth-card p{color:var(--muted);font-size:.95rem;margin-bottom:20px}
+.auth-input{width:100%;padding:14px 16px;border:2px solid var(--line);border-radius:10px;font-size:1rem;font-family:inherit;background:var(--paper);color:var(--ink);margin-bottom:14px}
+.auth-input:focus{outline:none;border-color:var(--mihrab)}
+.auth-status{margin-top:16px;font-size:.9rem;font-weight:600;min-height:22px}
+.auth-status.good{color:var(--mihrab)}
+.auth-status.bad{color:var(--error)}
+</style>
+</head>
+<body>
+
+<!-- ============ SIGN IN ============ -->
+<div id="screen-auth" class="screen active">
+  <header class="topbar">
+    <div class="brand"><span class="star">۞</span> Masar Academy</div>
+  </header>
+  <div class="auth-wrap">
+    <section class="card auth-card fade-in">
+      <span class="star-big">۞</span>
+      <h1>Assalamu alaikum</h1>
+      <p>Sign in to begin your Qur'an journey. No password needed — we'll email you a secure sign-in link.</p>
+      <input class="auth-input" id="auth-email" type="email" autocomplete="email" placeholder="you@example.com">
+      <button class="btn" style="width:100%" id="auth-send" onclick="sendLink()">Email me a sign-in link</button>
+      <div class="auth-status" id="auth-status"></div>
+      <p class="hint" style="margin-top:18px">First time here? The same link creates your account. Your progress, XP and streak will be saved automatically.</p>
+    </section>
+  </div>
+</div>
+
+<!-- ============ DASHBOARD ============ -->
+<div id="screen-dashboard" class="screen">
+  <header class="topbar">
+    <div class="brand"><span class="star">۞</span> Masar Academy</div>
+    <nav>
+      <button class="current">Dashboard</button>
+      <button onclick="showPaths()">Paths</button>
+      <button onclick="toast('Settings coming in the full build')">Settings</button>
+      <button onclick="signOut()">Sign out</button>
+    </nav>
+  </header>
+
+  <h1 class="greeting fade-in">Assalamu alaikum, <span id="greeting-name">friend</span></h1>
+  <p class="motivation fade-in" id="motivation"></p>
+
+  <div class="dash-grid">
+    <div style="display:flex;flex-direction:column;gap:20px">
+      <section class="card today-card fade-in" id="today-card"></section>
+      <section class="card revision-card fade-in">
+        <div class="eyebrow dark">Revision</div>
+        <p>No revision due today. Keep going with your Path.</p>
+      </section>
+    </div>
+    <aside class="card progress-panel fade-in">
+      <h3>Your progress</h3>
+      <div class="stat"><span class="label">Current Path</span><span class="value">Beginner Reading</span></div>
+      <div class="stat">
+        <div style="width:100%">
+          <div style="display:flex;justify-content:space-between"><span class="label">Short Vowels</span><span class="value" id="dash-module-pct">0%</span></div>
+          <div class="bar"><span id="dash-module-bar" style="width:0%"></span></div>
+        </div>
+      </div>
+      <div class="stat"><span class="label">Sessions this week</span><span class="value" id="dash-sessions">0 of 4</span></div>
+      <div class="stat"><span class="label">Total XP</span><span class="value" id="dash-xp">0 XP</span></div>
+      <div class="stat"><span class="label">Streak</span><span class="value" id="dash-streak">0 days ✦</span></div>
+      <p class="goal-msg" id="goal-msg"></p>
+    </aside>
+  </div>
+  <p class="proto-note">Note: your Steps, XP and streak are saved to your account. Audio still uses your device's built-in Arabic voice where available — real recitation audio is coming next.</p>
+</div>
+
+<!-- ============ PATHS ============ -->
+<div id="screen-paths" class="screen">
+  <header class="topbar">
+    <div class="brand"><span class="star">۞</span> Masar Academy</div>
+    <nav>
+      <button onclick="showDashboard()">Dashboard</button>
+      <button class="current">Paths</button>
+      <button onclick="toast('Settings coming in the full build')">Settings</button>
+      <button onclick="signOut()">Sign out</button>
+    </nav>
+  </header>
+
+  <h1 class="paths-title fade-in">Your Path</h1>
+
+  <section class="card fade-in">
+    <div class="eyebrow dark">Current Path</div>
+    <h2 style="margin-bottom:4px">Beginner Reading</h2>
+    <p style="color:var(--muted);font-size:.93rem">From recognising letters to reading your first surahs.</p>
+    <div class="summary-grid" id="path-summary"></div>
+    <div style="margin-top:18px">
+      <button class="btn secondary" onclick="showCourseIntro()">View course introduction</button>
+    </div>
+  </section>
+
+  <section class="card fade-in" style="margin-top:20px">
+    <div class="eyebrow dark">Modules</div>
+    <div class="module-list" id="module-list"></div>
+  </section>
+
+  <section class="card fade-in" style="margin-top:20px">
+    <div class="eyebrow dark">Current module — Short Vowels</div>
+    <p style="color:var(--muted);font-size:.9rem">Tap any Step to see its overview. Completed Steps stay open for review, always.</p>
+    <div class="step-list" id="step-list"></div>
+  </section>
+
+  <h2 style="margin:30px 0 4px;font-size:1.2rem;color:var(--night)" class="fade-in">More courses on the way</h2>
+  <div class="coming-grid fade-in">
+    <div class="coming-card"><b>Tajweed Foundation</b><span>Rule-based improvement for readers</span></div>
+    <div class="coming-card"><b>Surah Memorisation</b><span>Structured hifdh, surah by surah</span></div>
+    <div class="coming-card"><b>Reading Fluency</b><span>Smoother, steadier recitation</span></div>
+    <div class="coming-card"><b>Meaning &amp; Reflection</b><span>Vocabulary, tafsir and reflection</span></div>
+  </div>
+</div>
+
+<!-- ============ COURSE INTRODUCTION ============ -->
+<div id="screen-course-intro" class="screen">
+  <header class="topbar">
+    <div class="brand"><span class="star">۞</span> Masar Academy</div>
+    <nav>
+      <button onclick="showDashboard()">Dashboard</button>
+      <button onclick="showPaths()">Paths</button>
+      <button onclick="toast('Settings coming in the full build')">Settings</button>
+      <button onclick="signOut()">Sign out</button>
+    </nav>
+  </header>
+
+  <section class="card hero-card fade-in">
+    <div class="eyebrow">Course introduction</div>
+    <h1>Beginner Reading</h1>
+    <p>Learn to read the Qur'an from absolute zero. This path takes you from recognising individual Arabic letters and sounds, through vowels and joined words, all the way to reading your first short surahs — slowly, gently, and in order.</p>
+  </section>
+
+  <section class="card fade-in" style="margin-top:20px">
+    <div class="chips">
+      <span class="chip">Level: <b>Beginner</b></span>
+      <span class="chip">Prerequisites: <b>None</b></span>
+      <span class="chip" id="ci-time"></span>
+      <span class="chip" id="ci-xp"></span>
+    </div>
+    <h2 class="section-h">Why this matters</h2>
+    <p style="font-size:.95rem;color:var(--ink)">Every journey with the Qur'an begins with the letters. Reading directly — even slowly — connects you to the words of Allah without anything in between. This course builds that ability one small, unhurried step at a time, with no assumed knowledge.</p>
+
+    <h2 class="section-h">What you'll learn</h2>
+    <ul class="obj-list">
+      <li>Recognise Arabic letters by sight and by sound</li>
+      <li>Read letters with the three short vowels: Fatha, Kasra and Dhamma</li>
+      <li>Join sounds into syllables and simple words</li>
+      <li>Recite your first words aloud with confidence</li>
+    </ul>
+
+    <h2 class="section-h">By the end of this path, you will be able to</h2>
+    <ul class="obj-list">
+      <li>Sound out any vowelled letter you see</li>
+      <li>Read short vowelled words unaided</li>
+      <li>Begin reading Surah Al-Fatiha and the short surahs</li>
+    </ul>
+
+    <div style="margin-top:26px;display:flex;gap:12px;flex-wrap:wrap">
+      <button class="btn" onclick="startLearning()">Start Learning</button>
+      <button class="btn secondary" onclick="showPaths()">Back to Path</button>
+    </div>
+  </section>
+</div>
+
+<!-- ============ STEP OVERVIEW ============ -->
+<div id="screen-step-overview" class="screen">
+  <header class="topbar">
+    <div class="brand"><span class="star">۞</span> Masar Academy</div>
+    <nav>
+      <button onclick="showDashboard()">Dashboard</button>
+      <button onclick="showPaths()">Paths</button>
+      <button onclick="toast('Settings coming in the full build')">Settings</button>
+      <button onclick="signOut()">Sign out</button>
+    </nav>
+  </header>
+  <div id="ov-body"></div>
+</div>
+
+<!-- ============ LESSON PLAYER ============ -->
+<div id="screen-lesson" class="screen">
+  <header class="lesson-header">
+    <button class="back" onclick="confirmExit()" aria-label="Back">←</button>
+    <div class="title" id="lesson-title"></div>
+    <div class="pill phase" id="phase-pill">Learn</div>
+    <div class="pill" id="progress-pill"></div>
+  </header>
+  <div class="beads" id="beads" aria-hidden="true"></div>
+  <div class="activity-wrap"><div class="activity fade-in" id="activity-area"></div></div>
+  <div class="lesson-footer">
+    <button class="nav-btn" id="btn-prev" onclick="prevActivity()">← Previous</button>
+    <button class="help-link" onclick="toast('In the full app this opens a short help guide')">Need help?</button>
+    <button class="nav-btn" id="btn-next" onclick="nextActivity()" disabled>Next →</button>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+/* =========================================================
+   Masar Academy — prototype v3
+   Learn -> Practise -> Complete. Session-only state.
+   ========================================================= */
+
+/* ---------- COURSE DATA ---------- */
+const MODULES = [
+  { name:'Arabic Sounds (Recognition)', status:'done' },
+  { name:'Makharij Basics',             status:'done' },
+  { name:'Short Vowels',                status:'current' },
+  { name:'Joining Letters',             status:'locked' },
+  { name:'Simple Words',                status:'locked' },
+  { name:'Short Surahs',                status:'locked' },
+];
+
+const STEPS = [
+  {
+    title:'Introduction to Fatha', minutes:6, difficulty:'Beginner',
+    desc:'Meet the first short vowel and learn to hear and spot the "a" sound.',
+    objectives:[
+      'Recognise the Fatha mark above a letter',
+      'Hear the difference between Fatha and Kasra',
+      'Identify letters carrying Fatha by ear',
+    ],
+    activities:[
+      { type:'teach', xp:0, heading:'Meet Fatha',
+        paras:[
+          'Fatha ( \u0640\u064E ) is a small diagonal stroke that sits above a letter. It gives the letter a short "a" sound, like the a in "cat".',
+          'Listen to these examples. The letter changes, but the Fatha always adds the same short "a".',
+        ],
+        examples:[
+          { ar:'\u0628\u064E', label:'ba — the letter Baa with Fatha' },
+          { ar:'\u062A\u064E', label:'ta — the letter Taa with Fatha' },
+          { ar:'\u0641\u064E', label:'fa — the letter Faa with Fatha' },
+        ],
+        note:'Tap each example and repeat it quietly to yourself before continuing.' },
+      { type:'listenTap', xp:4, audio:'\u0628\u064E', options:['\u062A\u064E','\u0628\u064E','\u0646\u064E','\u062B\u064E'], answer:'\u0628\u064E',
+        good:'Correct, that was \u0628\u064E.', hint:'Fatha is the small stroke above the letter, giving an "a" sound.' },
+      { type:'mcq', xp:4, q:'Where does Fatha sit?',
+        options:['Above the letter','Below the letter','After the letter'], answer:0,
+        explain:'Fatha sits above the letter — a small diagonal stroke.' },
+      { type:'compare', xp:4, a:'\u0628\u064E', b:'\u0628\u0650', q:'Which one is \u0628\u064E ?', answer:'a',
+        good:'Correct — A was \u0628\u064E, the "ba" sound.',
+        bad:'Not quite — that was \u0628\u0650, the "bi" sound. Listen again.',
+        hint:'Fatha sounds like "a". Kasra (below the letter) sounds like "i".' },
+      { type:'listenTap', xp:4, audio:'\u0641\u064E', options:['\u0641\u064E','\u0642\u064E','\u0639\u064E'], answer:'\u0641\u064E',
+        good:'Correct, that was \u0641\u064E.', hint:'Listen for the soft "f" at the start.' },
+    ]
+  },
+  {
+    title:'Fatha Sounds — Identification', minutes:7, difficulty:'Beginner',
+    desc:'Train your ear to hear Fatha across different letters, light and heavy.',
+    objectives:[
+      'Match Fatha sounds to their letters by ear',
+      'Distinguish the deep \u0642 from the lighter \u0643',
+    ],
+    activities:[
+      { type:'teach', xp:0, heading:'Same vowel, different letters',
+        paras:[
+          'The vowel stays the same, but every letter gives it a different colour. Some letters are light and thin; others come from deep in the throat.',
+          'Listen to these two carefully — they are cousins, but one is deeper.',
+        ],
+        examples:[
+          { ar:'\u0643\u064E', label:'ka — light, from the mouth' },
+          { ar:'\u0642\u064E', label:'qa — deep, from the back of the throat' },
+        ],
+        note:'This light/heavy difference matters a lot later in Tajweed.' },
+      { type:'match', xp:5, pairs:['\u0628\u064E','\u062A\u064E','\u0641\u064E'],
+        hint:'Play each sound, then tap the letter it belongs to.' },
+      { type:'listenTap', xp:4, audio:'\u0642\u064E', options:['\u0643\u064E','\u0642\u064E','\u0641\u064E'], answer:'\u0642\u064E',
+        good:'Correct — \u0642\u064E, the deep "qa" from the back of the throat.',
+        hint:'\u0642 is deeper and heavier than \u0643.' },
+      { type:'compare', xp:4, a:'\u0643\u064E', b:'\u0642\u064E', q:'Which one is \u0642\u064E ?', answer:'b',
+        good:'Correct — B was \u0642\u064E, the deeper sound.',
+        bad:'Not quite — that was \u0643\u064E, the lighter sound.',
+        hint:'\u0642 comes from deeper in the throat than \u0643.' },
+      { type:'mcq', xp:4, q:'Fatha gives which short sound?',
+        options:['"a" as in "cat"','"i" as in "sit"','"u" as in "put"'], answer:0,
+        explain:'Fatha gives the short "a" sound.' },
+    ]
+  },
+  {
+    title:'Repeat After Me — Letters with Fatha', minutes:7, difficulty:'Beginner',
+    desc:'Move from listening to reciting: record yourself repeating Fatha sounds.',
+    objectives:[
+      'Recite letter groups with Fatha aloud',
+      'Recognise the three throat letters \u062C \u062D \u062E',
+    ],
+    activities:[
+      { type:'teach', xp:0, heading:'Listening builds the ear, reciting builds the tongue',
+        paras:[
+          'Hearing a sound correctly is half the work. The other half is making it with your own mouth — slowly, clearly, and without rushing.',
+          'This Step includes three letters from the throat. Listen to how each one differs.',
+        ],
+        examples:[
+          { ar:'\u062C\u064E', label:'ja — from the middle of the tongue' },
+          { ar:'\u062D\u064E', label:'\u1E25a — a breathy sound from the throat' },
+          { ar:'\u062E\u064E', label:'kha — a rasping sound from the upper throat' },
+        ],
+        note:'Take these slowly. Precision beats speed every time.' },
+      { type:'recite', xp:6, display:'\u0628\u064E &nbsp; \u062A\u064E &nbsp; \u062B\u064E', audio:'\u0628\u064E \u062A\u064E \u062B\u064E',
+        note:'Nothing is uploaded in the prototype — your recording stays on this device.' },
+      { type:'recite', xp:6, display:'\u062C\u064E &nbsp; \u062D\u064E &nbsp; \u062E\u064E', audio:'\u062C\u064E \u062D\u064E \u062E\u064E',
+        note:'These three come from the throat. Take it slowly.' },
+      { type:'listenTap', xp:4, audio:'\u062E\u064E', options:['\u062C\u064E','\u062D\u064E','\u062E\u064E'], answer:'\u062E\u064E',
+        good:'Correct — \u062E\u064E, the rasping sound from the upper throat.',
+        hint:'\u062E has a rough, rasping quality. \u062D is a breathy sound.' },
+    ]
+  },
+  {
+    title:'Word Practice — Building with Fatha', minutes:8, difficulty:'Beginner',
+    desc:'Combine letters and vowels into syllables, then build your first word.',
+    objectives:[
+      'Build letter + vowel combinations yourself',
+      'Assemble a three-sound word reading right to left',
+    ],
+    activities:[
+      { type:'teach', xp:0, heading:'From letters to words',
+        paras:[
+          'A letter plus a vowel makes a sound. Sounds joined together make a word. That is all reading is — and you can already do the first part.',
+          'Remember: Arabic reads right to left. When you build a word, the first sound goes on the right.',
+        ],
+        examples:[
+          { ar:'\u0628\u064E', label:'ba — one letter, one vowel, one sound' },
+          { ar:'\u0628\u064E\u0631\u064E\u0643\u064E', label:'baraka — three sounds joined into a word' },
+        ],
+        note:'You\u2019ll build this exact word yourself in a moment.' },
+      { type:'syllable', xp:5, targetSound:'\u0628\u064E',
+        letters:['\u0628','\u062A','\u0646'], q:'Build the sound "ba"',
+        hint:'Pick the letter, then pick the vowel mark.' },
+      { type:'syllable', xp:5, targetSound:'\u062A\u064E',
+        letters:['\u0628','\u062A','\u0646'], q:'Now build the sound "ta"',
+        hint:'Same idea — letter first, then vowel.' },
+      { type:'word', xp:6, target:['\u0628\u064E','\u0631\u064E','\u0643\u064E'], word:'\u0628\u064E\u0631\u064E\u0643\u064E',
+        q:'Build the word "ba-ra-ka" — tap the sounds in order.',
+        hint:'Arabic reads right to left. The first sound goes in the right-hand slot.' },
+      { type:'mcq', xp:4, q:'\u0628\u064E + \u0628\u064E makes which sound?',
+        options:['bi-bi','ba-ba','bu-bu'], answer:1,
+        explain:'Two Fathas: ba-ba (\u0628\u064E\u0628\u064E).' },
+    ]
+  },
+  {
+    title:'Mixed Practice — Fatha, Kasra, Dhamma', minutes:8, difficulty:'Beginner',
+    desc:'Meet the other two short vowels and learn to tell all three apart.',
+    objectives:[
+      'Recognise Kasra ("i") and Dhamma ("u") by sight and sound',
+      'Distinguish all three short vowels on the same letter',
+    ],
+    activities:[
+      { type:'teach', xp:0, heading:'The complete set of short vowels',
+        paras:[
+          'Fatha has two siblings. Kasra ( \u0640\u0650 ) sits below the letter and gives a short "i", like "sit". Dhamma ( \u0640\u064F ) sits above the letter, looks like a tiny \u0648, and gives a short "u", like "put".',
+          'Here are all three on the same letter. Listen to how only the vowel changes.',
+        ],
+        examples:[
+          { ar:'\u0628\u064E', label:'ba — Fatha, stroke above' },
+          { ar:'\u0628\u0650', label:'bi — Kasra, stroke below' },
+          { ar:'\u0628\u064F', label:'bu — Dhamma, curl above' },
+        ],
+        note:'These three marks unlock most of the Qur\u2019an\u2019s vowelling.' },
+      { type:'compare', xp:4, a:'\u0628\u064E', b:'\u0628\u0650', q:'Which one is \u0628\u0650 ?', answer:'b',
+        good:'Correct — B was \u0628\u0650, the Kasra "i" sound.',
+        bad:'Not quite — that was \u0628\u064E with Fatha.',
+        hint:'Kasra sits below the letter and sounds like "i".' },
+      { type:'listenTap', xp:4, audio:'\u0628\u064F', options:['\u0628\u064E','\u0628\u0650','\u0628\u064F'], answer:'\u0628\u064F',
+        good:'Correct — \u0628\u064F, the Dhamma "u" sound.',
+        hint:'Dhamma looks like a tiny \u0648 above the letter.' },
+      { type:'match', xp:5, pairs:['\u0628\u064E','\u0628\u0650','\u0628\u064F'],
+        hint:'All three vowels on the same letter — trust your ear.' },
+      { type:'mcq', xp:4, q:'Dhamma gives which short sound?',
+        options:['"a"','"i"','"u"'], answer:2,
+        explain:'Dhamma gives the short "u" sound, like "put".' },
+    ]
+  },
+  {
+    title:'Mini Assessment', minutes:6, difficulty:'Beginner',
+    desc:'A gentle check of everything in this module, ending with a full recitation.',
+    objectives:[
+      'Identify sounds and vowels without hints',
+      'Build a sound unaided and recite a word in full',
+    ],
+    activities:[
+      { type:'teach', xp:0, heading:'Mini assessment',
+        paras:[
+          'A quick check of everything in this module — identifying sounds, building a syllable, and one recitation. No pressure: if anything feels shaky, every Step stays open for review afterwards.',
+        ],
+        examples:[],
+        note:'Take a breath, and begin when you\u2019re ready.' },
+      { type:'listenTap', xp:5, audio:'\u0633\u064E', options:['\u0633\u064E','\u0635\u064E','\u0634\u064E'], answer:'\u0633\u064E',
+        good:'Correct — \u0633\u064E, the light "sa".', hint:'Listen for the light, thin sound.' },
+      { type:'syllable', xp:5, targetSound:'\u0631\u064E',
+        letters:['\u0631','\u062F','\u0632'], q:'Build the sound "ra"',
+        hint:'Letter first, then the vowel mark.' },
+      { type:'mcq', xp:5, q:'Which mark gives the "i" sound?',
+        options:['Fatha ( \u0640\u064E )','Kasra ( \u0640\u0650 )','Dhamma ( \u0640\u064F )'], answer:1,
+        explain:'Kasra, the stroke below the letter, gives "i".' },
+      { type:'recite', xp:6, display:'\u0628\u064E &nbsp; \u0631\u064E &nbsp; \u0643\u064E', audio:'\u0628\u064E \u0631\u064E \u0643\u064E',
+        note:'In the full app, a recitation like this could be saved for teacher review.' },
+    ]
+  },
+];
+
+const VOWELS = [
+  { name:'Fatha',  mark:'\u0640\u064E', char:'\u064E' },
+  { name:'Kasra',  mark:'\u0640\u0650', char:'\u0650' },
+  { name:'Dhamma', mark:'\u0640\u064F', char:'\u064F' },
+];
+
+function stepXP(i){ return STEPS[i].activities.reduce((a,x) => a + (x.xp || 0), 0); }
+function totalXP(){ return STEPS.reduce((a,_,i) => a + stepXP(i), 0); }
+
+/* ---------- SUPABASE ---------- */
+const SUPA_URL = 'https://goscabktnywmuunbpuyh.supabase.co';
+const SUPA_KEY = 'sb_publishable_GTn0UjmN4rWwwzo34N2tBA__15ULObV';
+const db = window.supabase.createClient(SUPA_URL, SUPA_KEY);
+let userId = null;
+
+function todayStr(d){ return (d || new Date()).toISOString().slice(0,10); }
+function yesterdayStr(){ const d = new Date(); d.setDate(d.getDate() - 1); return todayStr(d); }
+function weekStartStr(){
+  const d = new Date();
+  const day = (d.getDay() + 6) % 7;   // Monday = 0
+  d.setDate(d.getDate() - day);
+  return todayStr(d);
+}
+
+async function sendLink(){
+  const email = document.getElementById('auth-email').value.trim();
+  const status = document.getElementById('auth-status');
+  const btn = document.getElementById('auth-send');
+  if (!email || !email.includes('@')){
+    status.textContent = 'Please enter a valid email address.';
+    status.className = 'auth-status bad';
+    return;
+  }
+  btn.disabled = true;
+  status.textContent = 'Sending your link\u2026';
+  status.className = 'auth-status';
+  const { error } = await db.auth.signInWithOtp({
+    email,
+    options: { emailRedirectTo: window.location.origin + window.location.pathname }
+  });
+  btn.disabled = false;
+  if (error){
+    status.textContent = 'Could not send the link: ' + error.message;
+    status.className = 'auth-status bad';
+  } else {
+    status.textContent = 'Link sent \u2713 Check your email (and spam folder) and open it on this device.';
+    status.className = 'auth-status good';
+  }
+}
+
+async function signOut(){
+  await db.auth.signOut();
+  window.location.reload();
+}
+
+async function loadProgress(){
+  const { data, error } = await db.from('progress')
+    .select('*').eq('user_id', userId).maybeSingle();
+  if (error){ toast('Could not load your progress: ' + error.message); return; }
+  if (data){
+    const saved = Array.isArray(data.steps_done) ? data.steps_done : [];
+    state.stepsDone = STEPS.map((_, i) => !!saved[i]);
+    state.moduleXP = data.module_xp || 0;
+    state.totalXP = data.total_xp || 0;
+    state.streak = data.streak || 0;
+    state.lastActive = data.last_active || null;
+    state.sessionsWeek = (data.week_start === weekStartStr()) ? (data.sessions_week || 0) : 0;
+    state.introSeen = state.stepsDone.some(Boolean);
+  }
+}
+
+async function saveProgress(){
+  if (!userId) return;
+  const { error } = await db.from('progress').upsert({
+    user_id: userId,
+    steps_done: state.stepsDone,
+    module_xp: state.moduleXP,
+    total_xp: state.totalXP,
+    streak: state.streak,
+    sessions_week: state.sessionsWeek,
+    week_start: weekStartStr(),
+    last_active: state.lastActive,
+    updated_at: new Date().toISOString(),
+  });
+  if (error) toast('Could not save progress: ' + error.message);
+}
+
+async function enterApp(session){
+  if (userId) return;
+  userId = session.user.id;
+  const email = session.user.email || '';
+  const name = email.split('@')[0] || 'friend';
+  document.getElementById('greeting-name').textContent =
+    name.charAt(0).toUpperCase() + name.slice(1);
+  if (window.location.hash) history.replaceState(null, '', window.location.pathname);
+  await loadProgress();
+  showDashboard();
+}
+
+/* ---------- APP STATE ---------- */
+const state = {
+  stepsDone: STEPS.map(() => false),
+  stepProgress: {},          // stepIndex -> saved actDone array (partial, session only)
+  moduleXP: 0,
+  totalXP: 0,
+  sessionsWeek: 0,
+  goal: 4,
+  streak: 0,
+  lastActive: null,
+  introSeen: false,
+};
+let currentStep = 0;
+let currentAct = 0;
+let actDone = [];
+let earnedXP = 0;
+
+/* ---------- helpers ---------- */
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._h);
+  t._h = setTimeout(() => t.classList.remove('show'), 2600);
+}
+function show(id){
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+function firstIncompleteStep(){
+  const i = state.stepsDone.indexOf(false);
+  return i === -1 ? null : i;
+}
+function stepUnlocked(i){
+  return i === 0 || state.stepsDone[i - 1] || state.stepsDone[i];
+}
+function minutesRemaining(){
+  return STEPS.reduce((a,s,i) => a + (state.stepsDone[i] ? 0 : s.minutes), 0);
+}
+
+/* ---------- audio ---------- */
+let arVoice = null;
+function loadVoices(){
+  const v = speechSynthesis.getVoices();
+  arVoice = v.find(x => x.lang && x.lang.startsWith('ar')) || null;
+}
+if ('speechSynthesis' in window){
+  loadVoices();
+  speechSynthesis.onvoiceschanged = loadVoices;
+}
+let warnedNoVoice = false;
+function playArabic(text, btn){
+  if (!('speechSynthesis' in window)){
+    toast('Audio placeholder — real recitation audio comes in the full app');
+    return;
+  }
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'ar-SA';
+  u.rate = 0.72;
+  if (arVoice) u.voice = arVoice;
+  if (btn){
+    btn.classList.add('playing');
+    u.onend = () => btn.classList.remove('playing');
+    u.onerror = () => btn.classList.remove('playing');
+  }
+  speechSynthesis.speak(u);
+  if (!arVoice && !warnedNoVoice){
+    warnedNoVoice = true;
+    toast('No Arabic voice found on this device — audio is approximate in the prototype');
+  }
+}
+
+/* ---------- DASHBOARD ---------- */
+const motivations = [
+  "One small step with sincerity is better than a rushed mile.",
+  "Allah loves consistent deeds, even if small.",
+  "Your Qur'an journey is between you and Allah alone."
+];
+document.getElementById('motivation').textContent =
+  motivations[Math.floor(Math.random() * motivations.length)];
+
+function renderDashboard(){
+  const doneCount = state.stepsDone.filter(Boolean).length;
+  const pct = Math.round(doneCount / STEPS.length * 100);
+  document.getElementById('dash-module-pct').textContent = pct + '%';
+  document.getElementById('dash-module-bar').style.width = pct + '%';
+  document.getElementById('dash-sessions').textContent = state.sessionsWeek + ' of ' + state.goal;
+  document.getElementById('dash-xp').textContent = state.totalXP + ' XP';
+  document.getElementById('dash-streak').textContent = state.streak + ' days \u2726';
+  document.getElementById('goal-msg').textContent =
+    state.sessionsWeek >= state.goal
+      ? "You've hit your weekly goal \uD83D\uDE4C"
+      : (state.goal - state.sessionsWeek) + ' more session' + (state.goal - state.sessionsWeek > 1 ? 's' : '') + ' to hit your goal this week.';
+
+  const card = document.getElementById('today-card');
+  const next = firstIncompleteStep();
+  if (next === null){
+    card.innerHTML = `
+      <div class="eyebrow">Module complete</div>
+      <h2>Short Vowels — mastered</h2>
+      <div class="today-meta"><span>Joining Letters unlocks in the full app</span></div>
+      <button class="btn" onclick="showPaths()">Review any Step</button>`;
+  } else {
+    const s = STEPS[next];
+    const inProgress = !!state.stepProgress[next];
+    card.innerHTML = `
+      <div class="eyebrow">Today's Step \u00B7 Current module: Short Vowels</div>
+      <h2>${s.title}</h2>
+      <div class="today-meta">
+        <span>\u23F1 Approx. ${s.minutes} minutes</span>
+        <span>\u2726 Earn ${stepXP(next)} XP</span>
+        <span>Step ${next + 1} of ${STEPS.length}</span>
+      </div>
+      <button class="btn" onclick="openStepFlow(${next})">${inProgress ? 'Continue Learning' : 'Start Step'}</button>`;
+  }
+}
+function showDashboard(){ renderDashboard(); show('screen-dashboard'); }
+
+/* first entry to the course goes via the introduction */
+function openStepFlow(i){
+  if (!state.introSeen){ showCourseIntro(); return; }
+  showStepOverview(i);
+}
+function showCourseIntro(){
+  document.getElementById('ci-time').innerHTML = 'This module: <b>~' + STEPS.reduce((a,s) => a + s.minutes, 0) + ' minutes</b>';
+  document.getElementById('ci-xp').innerHTML = 'XP available: <b>' + totalXP() + ' XP</b>';
+  show('screen-course-intro');
+}
+function startLearning(){
+  state.introSeen = true;
+  const next = firstIncompleteStep();
+  showStepOverview(next === null ? 0 : next);
+}
+
+/* ---------- PATHS ---------- */
+function renderPaths(){
+  const doneCount = state.stepsDone.filter(Boolean).length;
+  const cur = firstIncompleteStep();
+
+  /* summary */
+  const sum = document.getElementById('path-summary');
+  const stepsPct = Math.round(doneCount / STEPS.length * 100);
+  const xpPct = totalXP() ? Math.round(state.moduleXP / totalXP() * 100) : 0;
+  sum.innerHTML = `
+    <div class="summary-item">
+      <div class="s-label"><span>Steps completed</span><span>${doneCount} of ${STEPS.length}</span></div>
+      <div class="bar"><span style="width:${stepsPct}%"></span></div>
+    </div>
+    <div class="summary-item">
+      <div class="s-label"><span>Module XP</span><span>${state.moduleXP} of ${totalXP()}</span></div>
+      <div class="bar"><span style="width:${xpPct}%"></span></div>
+    </div>
+    <div class="summary-item">
+      <div class="s-label"><span>Time remaining</span><span>~${minutesRemaining()} min</span></div>
+    </div>
+    <div class="summary-item">
+      <div class="s-label"><span>Streak</span><span>${state.streak} days \u2726</span></div>
+    </div>`;
+
+  /* modules */
+  const ml = document.getElementById('module-list');
+  ml.innerHTML = '';
+  MODULES.forEach(m => {
+    const row = document.createElement('div');
+    row.className = 'module-row' + (m.status === 'locked' ? ' locked' : '') + (m.status === 'current' ? ' current' : '');
+    let ic = '\uD83D\uDD12', sub = 'Locked';
+    if (m.status === 'done'){ ic = '\u2713'; sub = 'Complete'; }
+    if (m.status === 'current'){ ic = '\u25B8'; sub = doneCount + ' of ' + STEPS.length + ' Steps complete'; }
+    row.innerHTML = `<div class="m-ic">${ic}</div>
+      <div class="m-name">${m.name}<div class="m-sub">${sub}</div></div>`;
+    if (m.status === 'locked'){
+      row.style.cursor = 'pointer';
+      row.onclick = () => toast('\uD83D\uDD12 Complete the previous activity to unlock.');
+    }
+    ml.appendChild(row);
+  });
+
+  /* steps */
+  const sl = document.getElementById('step-list');
+  sl.innerHTML = '';
+  STEPS.forEach((s, i) => {
+    const unlocked = stepUnlocked(i);
+    const done = state.stepsDone[i];
+    const prog = state.stepProgress[i];
+    const isCurrent = (i === cur);
+    const row = document.createElement('button');
+    row.className = 'step-row' + (done ? ' done' : '') + (!unlocked ? ' locked' : '') + (isCurrent ? ' now' : '');
+    let metaExtra = s.minutes + ' min \u00B7 ' + stepXP(i) + ' XP';
+    if (prog && !done){
+      const d = prog.filter(Boolean).length;
+      metaExtra = d + ' of ' + prog.length + ' done \u00B7 ' + metaExtra;
+    }
+    row.innerHTML = `
+      <span class="s-ic">${done ? '\u2713' : (unlocked ? '\u25B8' : '\uD83D\uDD12')}</span>
+      <span class="s-name">${i + 1}. ${s.title}</span>
+      <span class="s-meta">${metaExtra}</span>`;
+    row.onclick = () => {
+      if (!unlocked){
+        toast('\uD83D\uDD12 Complete the previous activity to unlock.');
+        return;
+      }
+      showStepOverview(i);
+    };
+    sl.appendChild(row);
+  });
+}
+function showPaths(){ renderPaths(); show('screen-paths'); }
+
+/* ---------- STEP OVERVIEW ---------- */
+function showStepOverview(i){
+  const s = STEPS[i];
+  const done = state.stepsDone[i];
+  const prog = state.stepProgress[i];
+  const exCount = s.activities.filter(a => a.type !== 'teach').length;
+
+  let statusHTML, buttonHTML, progressHTML = '';
+  if (done){
+    statusHTML = '<div class="ov-status done">\u2713 Completed — open for review any time</div>';
+    buttonHTML = `<button class="btn" onclick="startStep(${i})">Review Activity</button>`;
+  } else if (prog){
+    const d = prog.filter(Boolean).length;
+    const pct = Math.round(d / prog.length * 100);
+    statusHTML = '<div class="ov-status progress">In progress — ' + d + ' of ' + prog.length + ' parts done</div>';
+    progressHTML = `<div class="bar" style="max-width:320px"><span style="width:${pct}%"></span></div>`;
+    buttonHTML = `<button class="btn" onclick="startStep(${i})">Continue Learning</button>
+      <button class="btn secondary" onclick="startStep(${i}, true)">Restart Step</button>`;
+  } else {
+    statusHTML = '<div class="ov-status new">Not started</div>';
+    buttonHTML = `<button class="btn" onclick="startStep(${i})">Start Activity</button>`;
+  }
+
+  document.getElementById('ov-body').innerHTML = `
+    <section class="card hero-card fade-in">
+      <div class="eyebrow">Step ${i + 1} of ${STEPS.length} \u00B7 Short Vowels</div>
+      <h1>${s.title}</h1>
+      <p>${s.desc}</p>
+      ${statusHTML}
+    </section>
+    <section class="card fade-in" style="margin-top:20px">
+      <div class="chips">
+        <span class="chip">\u23F1 <b>${s.minutes} min</b></span>
+        <span class="chip">Level: <b>${s.difficulty}</b></span>
+        <span class="chip">\u2726 <b>${stepXP(i)} XP</b></span>
+        <span class="chip">1 lesson + <b>${exCount} exercises</b></span>
+      </div>
+      ${progressHTML}
+      <h2 class="section-h">In this Step you will</h2>
+      <ul class="obj-list">${s.objectives.map(o => '<li>' + o + '</li>').join('')}</ul>
+      <div style="margin-top:26px;display:flex;gap:12px;flex-wrap:wrap">
+        ${buttonHTML}
+        <button class="btn secondary" onclick="showPaths()">Back to Path</button>
+      </div>
+    </section>`;
+  show('screen-step-overview');
+}
+
+/* ---------- LESSON ENGINE ---------- */
+function startStep(i, restart){
+  currentStep = i;
+  earnedXP = 0;
+  const saved = state.stepProgress[i];
+  if (saved && !restart && !state.stepsDone[i]){
+    actDone = saved.slice();
+    const firstOpen = actDone.indexOf(false);
+    currentAct = firstOpen === -1 ? 0 : firstOpen;
+  } else {
+    actDone = STEPS[i].activities.map(() => false);
+    currentAct = 0;
+    if (restart) delete state.stepProgress[i];
+  }
+  document.getElementById('lesson-title').textContent = STEPS[i].title;
+  show('screen-lesson');
+  renderActivity();
+}
+function confirmExit(){
+  const partly = actDone.some(Boolean) && !actDone.every(Boolean);
+  if (partly && !state.stepsDone[currentStep]){
+    state.stepProgress[currentStep] = actDone.slice();
+    toast('Progress saved — resume this Step any time today.');
+  }
+  if ('speechSynthesis' in window) speechSynthesis.cancel();
+  showDashboard();
+}
+function renderBeads(){
+  const total = STEPS[currentStep].activities.length;
+  const b = document.getElementById('beads');
+  b.innerHTML = '';
+  for (let i = 0; i < total; i++){
+    const d = document.createElement('div');
+    d.className = 'bead' + (actDone[i] ? ' done' : '') + (i === currentAct ? ' now' : '');
+    b.appendChild(d);
+  }
+}
+function setNav(){
+  const total = STEPS[currentStep].activities.length;
+  const act = STEPS[currentStep].activities[currentAct];
+  document.getElementById('btn-prev').disabled = (currentAct === 0);
+  document.getElementById('btn-next').disabled = !actDone[currentAct];
+  document.getElementById('progress-pill').textContent =
+    (currentAct + 1) + ' of ' + total;
+  document.getElementById('phase-pill').textContent =
+    act.type === 'teach' ? 'Learn' : 'Practise';
+}
+function markDone(xp){
+  if (!actDone[currentAct]){
+    actDone[currentAct] = true;
+    earnedXP += xp;
+  }
+  setNav();
+  renderBeads();
+}
+function nextActivity(){
+  const total = STEPS[currentStep].activities.length;
+  if (!actDone[currentAct]) return;
+  if (currentAct === total - 1){ renderCompletion(); return; }
+  currentAct++;
+  renderActivity();
+}
+function prevActivity(){
+  if (currentAct === 0) return;
+  currentAct--;
+  renderActivity();
+}
+function renderActivity(){
+  if ('speechSynthesis' in window) speechSynthesis.cancel();
+  renderBeads();
+  setNav();
+  const area = document.getElementById('activity-area');
+  area.classList.remove('fade-in'); void area.offsetWidth; area.classList.add('fade-in');
+  const act = STEPS[currentStep].activities[currentAct];
+  RENDER[act.type](area, act);
+}
+
+/* ---------- ACTIVITY RENDERERS ---------- */
+const RENDER = {};
+
+RENDER.teach = function(area, act){
+  const examples = act.examples.map((ex, i) => `
+    <div class="ex-row">
+      <span class="ex-ar">${ex.ar}</span>
+      <span class="ex-label">${ex.label}</span>
+      <button class="play-btn small" data-ex="${i}">\u25B6 Play</button>
+    </div>`).join('');
+  area.innerHTML = `
+    <div class="teach">
+      <div class="eyebrow dark">Lesson</div>
+      <h2>${act.heading}</h2>
+      ${act.paras.map(p => '<p>' + p + '</p>').join('')}
+      ${examples ? '<div class="ex-grid">' + examples + '</div>' : ''}
+      ${act.note ? '<p class="note">' + act.note + '</p>' : ''}
+      <div style="margin-top:22px">
+        <button class="btn" onclick="nextActivity()">Continue to practice</button>
+      </div>
+    </div>`;
+  area.querySelectorAll('[data-ex]').forEach(btn => {
+    btn.onclick = () => playArabic(act.examples[+btn.dataset.ex].ar, btn);
+  });
+  markDone(0);
+};
+
+RENDER.listenTap = function(area, act){
+  area.innerHTML = `
+    <p class="instruction">Listen, then tap the matching letter.</p>
+    <div class="play-row"><button class="play-btn" id="a-play">\u25B6 Play sound</button></div>
+    <div class="tiles" id="a-tiles"></div>
+    <div class="feedback" id="a-fb"></div>
+    ${act.hint ? `<p class="hint">Tip: ${act.hint}</p>` : ''}`;
+  const playBtn = document.getElementById('a-play');
+  playBtn.onclick = () => playArabic(act.audio, playBtn);
+  const tilesEl = document.getElementById('a-tiles');
+  act.options.forEach(opt => {
+    const b = document.createElement('button');
+    b.className = 'tile arabic';
+    b.textContent = opt;
+    b.onclick = () => {
+      if (actDone[currentAct]) return;
+      const fb = document.getElementById('a-fb');
+      if (opt === act.answer){
+        b.classList.add('correct');
+        fb.textContent = act.good || 'Correct.';
+        fb.className = 'feedback good';
+        markDone(act.xp);
+      } else {
+        b.classList.add('wrong');
+        fb.textContent = 'Not quite — listen again and try one more time.';
+        fb.className = 'feedback bad';
+        setTimeout(() => b.classList.remove('wrong'), 500);
+      }
+    };
+    tilesEl.appendChild(b);
+  });
+};
+
+RENDER.compare = function(area, act){
+  area.innerHTML = `
+    <p class="instruction">Listen to both sounds. <span class="arabic">${act.q}</span></p>
+    <div class="compare-row">
+      <div class="option" id="cmp-a">
+        <button class="play-btn" id="cmp-play-a">\u25B6 Sound A</button>
+        <button class="choose" id="cmp-choose-a">Choose A</button>
+      </div>
+      <div class="option" id="cmp-b">
+        <button class="play-btn" id="cmp-play-b">\u25B6 Sound B</button>
+        <button class="choose" id="cmp-choose-b">Choose B</button>
+      </div>
+    </div>
+    <div class="feedback" id="cmp-fb"></div>
+    ${act.hint ? `<p class="hint">Tip: ${act.hint}</p>` : ''}`;
+  document.getElementById('cmp-play-a').onclick = e => playArabic(act.a, e.currentTarget);
+  document.getElementById('cmp-play-b').onclick = e => playArabic(act.b, e.currentTarget);
+  function choose(which){
+    if (actDone[currentAct]) return;
+    const fb = document.getElementById('cmp-fb');
+    if (which === act.answer){
+      document.getElementById('cmp-' + which).classList.add('correct');
+      fb.textContent = act.good;
+      fb.className = 'feedback good';
+      markDone(act.xp);
+    } else {
+      document.getElementById('cmp-' + which).classList.add('wrong');
+      fb.textContent = act.bad;
+      fb.className = 'feedback bad';
+      setTimeout(() => document.getElementById('cmp-' + which).classList.remove('wrong'), 600);
+    }
+  }
+  document.getElementById('cmp-choose-a').onclick = () => choose('a');
+  document.getElementById('cmp-choose-b').onclick = () => choose('b');
+};
+
+RENDER.match = function(area, act){
+  area.innerHTML = `
+    <p class="instruction">Match each sound to its letter.</p>
+    <div class="match-cols">
+      <div class="col" id="m-sounds"></div>
+      <div class="col" id="m-letters"></div>
+    </div>
+    <div class="feedback" id="m-fb"></div>
+    ${act.hint ? `<p class="hint">Tip: ${act.hint}</p>` : ''}`;
+  const sounds = document.getElementById('m-sounds');
+  const letters = document.getElementById('m-letters');
+  let selectedSound = null;
+  let matched = 0;
+
+  const shuffled = [...act.pairs].sort(() => Math.random() - .5);
+
+  act.pairs.forEach((p, idx) => {
+    const sb = document.createElement('button');
+    sb.className = 'play-btn small';
+    sb.textContent = '\u25B6 Sound ' + (idx + 1);
+    sb.dataset.val = p;
+    sb.onclick = () => {
+      playArabic(p, sb);
+      document.querySelectorAll('#m-sounds .play-btn').forEach(x => x.style.outline = '');
+      if (!sb.dataset.done){
+        selectedSound = sb;
+        sb.style.outline = '3px solid var(--gold)';
+      }
+    };
+    sounds.appendChild(sb);
+  });
+
+  shuffled.forEach(p => {
+    const lb = document.createElement('button');
+    lb.className = 'tile arabic';
+    lb.style.fontSize = '2rem';
+    lb.style.padding = '10px';
+    lb.textContent = p;
+    lb.onclick = () => {
+      const fb = document.getElementById('m-fb');
+      if (!selectedSound){
+        fb.textContent = 'Play and select a sound first, then tap its letter.';
+        fb.className = 'feedback bad';
+        return;
+      }
+      if (lb.classList.contains('locked-in')) return;
+      if (selectedSound.dataset.val === p){
+        lb.classList.add('locked-in');
+        selectedSound.dataset.done = '1';
+        selectedSound.style.outline = '';
+        selectedSound.style.opacity = '.45';
+        selectedSound = null;
+        matched++;
+        fb.textContent = 'Matched.';
+        fb.className = 'feedback good';
+        if (matched === act.pairs.length){
+          fb.textContent = 'All matched — well done.';
+          markDone(act.xp);
+        }
+      } else {
+        lb.classList.add('wrong');
+        fb.textContent = 'Not that one — listen once more.';
+        fb.className = 'feedback bad';
+        setTimeout(() => lb.classList.remove('wrong'), 500);
+      }
+    };
+    letters.appendChild(lb);
+  });
+};
+
+RENDER.syllable = function(area, act){
+  area.innerHTML = `
+    <p class="instruction">${act.q}</p>
+    <div class="builder-result arabic" id="sy-result">\u00B7</div>
+    <div class="sub-label">Choose a letter</div>
+    <div class="tiles" id="sy-letters" style="grid-template-columns:repeat(3,1fr)"></div>
+    <div class="sub-label">Choose a vowel</div>
+    <div class="tiles" id="sy-vowels" style="grid-template-columns:repeat(3,1fr)"></div>
+    <div class="feedback" id="sy-fb"></div>
+    ${act.hint ? `<p class="hint">Tip: ${act.hint}</p>` : ''}`;
+  let chosenLetter = null, chosenVowel = null;
+  const result = document.getElementById('sy-result');
+  const fb = document.getElementById('sy-fb');
+
+  function update(){
+    if (chosenLetter && chosenVowel){
+      const combo = chosenLetter + chosenVowel.char;
+      result.textContent = combo;
+      playArabic(combo);
+      if (combo === act.targetSound){
+        fb.textContent = 'That\u2019s it — you built the target sound.';
+        fb.className = 'feedback good';
+        markDone(act.xp);
+      } else {
+        fb.textContent = 'Not the target sound — try a different combination.';
+        fb.className = 'feedback bad';
+        setTimeout(() => {
+          if (!actDone[currentAct]){
+            chosenLetter = null; chosenVowel = null;
+            result.textContent = '\u00B7';
+            document.querySelectorAll('#sy-letters .tile, #sy-vowels .tile')
+              .forEach(t => t.classList.remove('selected'));
+          }
+        }, 1400);
+      }
+    } else {
+      result.textContent = chosenLetter || (chosenVowel ? chosenVowel.mark : '\u00B7');
+    }
+  }
+  const lWrap = document.getElementById('sy-letters');
+  act.letters.forEach(l => {
+    const b = document.createElement('button');
+    b.className = 'tile arabic';
+    b.textContent = l;
+    b.onclick = () => {
+      if (actDone[currentAct]) return;
+      document.querySelectorAll('#sy-letters .tile').forEach(t => t.classList.remove('selected'));
+      b.classList.add('selected');
+      chosenLetter = l;
+      update();
+    };
+    lWrap.appendChild(b);
+  });
+  const vWrap = document.getElementById('sy-vowels');
+  VOWELS.forEach(v => {
+    const b = document.createElement('button');
+    b.className = 'tile arabic';
+    b.textContent = v.mark;
+    b.title = v.name;
+    b.onclick = () => {
+      if (actDone[currentAct]) return;
+      document.querySelectorAll('#sy-vowels .tile').forEach(t => t.classList.remove('selected'));
+      b.classList.add('selected');
+      chosenVowel = v;
+      update();
+    };
+    vWrap.appendChild(b);
+  });
+};
+
+RENDER.word = function(area, act){
+  area.innerHTML = `
+    <p class="instruction">${act.q}</p>
+    <div class="builder-slots" id="w-slots"></div>
+    <div class="tiles" id="w-tiles" style="grid-template-columns:repeat(3,1fr)"></div>
+    <div class="feedback" id="w-fb"></div>
+    <div style="text-align:center;margin-top:14px">
+      <button class="btn secondary" id="w-reset" style="display:none">Start again</button>
+    </div>
+    ${act.hint ? `<p class="hint">Tip: ${act.hint}</p>` : ''}`;
+  const slotsEl = document.getElementById('w-slots');
+  const tilesEl = document.getElementById('w-tiles');
+  const fb = document.getElementById('w-fb');
+  const resetBtn = document.getElementById('w-reset');
+  let filled = 0;
+
+  function build(){
+    slotsEl.innerHTML = '';
+    tilesEl.innerHTML = '';
+    fb.textContent = '';
+    fb.className = 'feedback';
+    resetBtn.style.display = 'none';
+    filled = 0;
+    act.target.forEach(() => {
+      const s = document.createElement('div');
+      s.className = 'slot';
+      slotsEl.appendChild(s);
+    });
+    const shuffled = [...act.target].sort(() => Math.random() - .5);
+    shuffled.forEach(t => {
+      const b = document.createElement('button');
+      b.className = 'tile arabic';
+      b.textContent = t;
+      b.onclick = () => {
+        if (actDone[currentAct] || b.classList.contains('locked-in')) return;
+        if (t === act.target[filled]){
+          const slot = slotsEl.children[filled];
+          slot.textContent = t;
+          slot.classList.add('filled');
+          b.classList.add('locked-in');
+          filled++;
+          playArabic(t);
+          if (filled === act.target.length){
+            fb.textContent = 'You built the word — listen to it in full.';
+            fb.className = 'feedback good';
+            setTimeout(() => playArabic(act.word), 700);
+            markDone(act.xp);
+          }
+        } else {
+          b.classList.add('wrong');
+          fb.textContent = 'Not that sound next — remember, right to left.';
+          fb.className = 'feedback bad';
+          resetBtn.style.display = 'inline-block';
+          setTimeout(() => b.classList.remove('wrong'), 500);
+        }
+      };
+      tilesEl.appendChild(b);
+    });
+  }
+  resetBtn.onclick = build;
+  build();
+};
+
+RENDER.mcq = function(area, act){
+  area.innerHTML = `
+    <p class="instruction">${act.q}</p>
+    <div class="mcq" id="q-wrap"></div>
+    <div class="feedback" id="q-fb"></div>`;
+  const wrap = document.getElementById('q-wrap');
+  const labels = ['A) ','B) ','C) ','D) '];
+  act.options.forEach((o, i) => {
+    const b = document.createElement('button');
+    b.textContent = labels[i] + o;
+    b.onclick = () => {
+      if (actDone[currentAct]) return;
+      const fb = document.getElementById('q-fb');
+      if (i === act.answer){
+        b.classList.add('correct');
+        fb.textContent = act.explain;
+        fb.className = 'feedback good';
+        markDone(act.xp);
+      } else {
+        b.classList.add('wrong');
+        fb.textContent = 'Not this one — try again.';
+        fb.className = 'feedback bad';
+        setTimeout(() => b.classList.remove('wrong'), 600);
+      }
+    };
+    wrap.appendChild(b);
+  });
+};
+
+RENDER.recite = function(area, act){
+  area.innerHTML = `
+    <p class="instruction">Listen, then record yourself repeating:</p>
+    <div class="big-arabic arabic">${act.display}</div>
+    <div class="play-row"><button class="play-btn" id="r-play">\u25B6 Play example</button></div>
+    <div class="record-row">
+      <button class="rec-btn" id="r-rec">\u25CF Record</button>
+      <span class="timer" id="r-timer">00:00</span>
+      <button class="btn secondary" id="r-playback" style="display:none">\u25B6 Play your recitation</button>
+    </div>
+    <div class="feedback" id="r-fb"></div>
+    ${act.note ? `<p class="hint">${act.note}</p>` : ''}`;
+  document.getElementById('r-play').onclick = e => playArabic(act.audio, e.currentTarget);
+  setupRecorder(act.xp);
+};
+
+/* ---------- recorder ---------- */
+let mediaRecorder = null, chunks = [], recTimer = null, recSeconds = 0, lastAudioURL = null;
+function setupRecorder(xp){
+  const recBtn = document.getElementById('r-rec');
+  const timerEl = document.getElementById('r-timer');
+  const pbBtn = document.getElementById('r-playback');
+  const fb = document.getElementById('r-fb');
+
+  recBtn.onclick = async () => {
+    if (mediaRecorder && mediaRecorder.state === 'recording'){
+      mediaRecorder.stop();
+      return;
+    }
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+      fb.textContent = 'Recording is not supported in this browser — marked as done for the prototype.';
+      fb.className = 'feedback good';
+      markDone(xp);
+      return;
+    }
+    try{
+      const stream = await navigator.mediaDevices.getUserMedia({ audio:true });
+      chunks = [];
+      mediaRecorder = new MediaRecorder(stream);
+      mediaRecorder.ondataavailable = e => chunks.push(e.data);
+      mediaRecorder.onstop = () => {
+        clearInterval(recTimer);
+        stream.getTracks().forEach(t => t.stop());
+        recBtn.textContent = '\u25CF Record again';
+        recBtn.classList.remove('recording');
+        const blob = new Blob(chunks, { type:'audio/webm' });
+        if (lastAudioURL) URL.revokeObjectURL(lastAudioURL);
+        lastAudioURL = URL.createObjectURL(blob);
+        pbBtn.style.display = 'inline-block';
+        pbBtn.onclick = () => new Audio(lastAudioURL).play();
+        fb.textContent = 'Recitation saved on this device. Well done.';
+        fb.className = 'feedback good';
+        markDone(xp);
+      };
+      mediaRecorder.start();
+      recSeconds = 0;
+      timerEl.textContent = '00:00';
+      recBtn.textContent = '\u25A0 Stop';
+      recBtn.classList.add('recording');
+      fb.textContent = '';
+      recTimer = setInterval(() => {
+        recSeconds++;
+        const m = String(Math.floor(recSeconds/60)).padStart(2,'0');
+        const s = String(recSeconds%60).padStart(2,'0');
+        timerEl.textContent = m + ':' + s;
+      }, 1000);
+    } catch(err){
+      fb.textContent = 'We need microphone permission to record your recitation. Click "Allow" in your browser settings — or continue without recording below.';
+      fb.className = 'feedback bad';
+      if (!document.getElementById('r-skip')){
+        const skip = document.createElement('button');
+        skip.id = 'r-skip';
+        skip.className = 'btn secondary';
+        skip.style.marginTop = '14px';
+        skip.textContent = 'Continue without recording';
+        skip.onclick = () => { fb.textContent = ''; markDone(3); toast('Marked as done for the prototype'); };
+        fb.after(skip);
+      }
+    }
+  };
+}
+
+/* ---------- completion ---------- */
+function renderCompletion(){
+  renderBeads();
+  const wasNew = !state.stepsDone[currentStep];
+  if (wasNew){
+    state.stepsDone[currentStep] = true;
+    state.moduleXP += earnedXP;
+    state.totalXP += earnedXP;
+    state.sessionsWeek += 1;
+    const today = todayStr();
+    if (state.lastActive !== today){
+      state.streak = (state.lastActive === yesterdayStr()) ? state.streak + 1 : 1;
+    }
+    state.lastActive = today;
+  }
+  delete state.stepProgress[currentStep];
+  saveProgress();
+  const moduleDone = state.stepsDone.every(Boolean);
+  const nextIdx = firstIncompleteStep();
+
+  const area = document.getElementById('activity-area');
+  area.classList.remove('fade-in'); void area.offsetWidth; area.classList.add('fade-in');
+
+  let nextBlock = '';
+  if (moduleDone){
+    nextBlock = `<p><b>Module complete.</b> Joining Letters unlocks in the full app — every Step here stays open for review whenever you like.</p>`;
+  } else {
+    nextBlock = `<p>Next up: <b>${STEPS[nextIdx].title}</b> — available now if you'd like extra practice, or come back tomorrow.</p>`;
+  }
+  area.innerHTML = `
+    <div class="center-block">
+      <span class="star-big">\u06DE</span>
+      <h2>${moduleDone ? 'Short Vowels — complete. Ma sha Allah.' : (wasNew ? 'Step complete — well done.' : 'Review complete — well done.')}</h2>
+      ${wasNew ? '<div class="xp-line">+' + earnedXP + ' XP</div>' : ''}
+      <div class="streak-line">\u2726 Streak: ${state.streak} days</div>
+      ${nextBlock}
+      <p class="dua">May Allah accept your effort.</p>
+      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+        <button class="btn" onclick="showDashboard()">Back to Dashboard</button>
+        <button class="btn secondary" onclick="startStep(${currentStep}, true)">Review this Step</button>
+        ${moduleDone ? '' : `<button class="btn secondary" onclick="showStepOverview(${nextIdx})">Continue to next Step</button>`}
+      </div>
+    </div>`;
+  document.getElementById('btn-next').disabled = true;
+  document.getElementById('btn-prev').disabled = true;
+}
+
+/* ---------- boot ---------- */
+(async function boot(){
+  const { data: { session } } = await db.auth.getSession();
+  if (session){ enterApp(session); }
+  db.auth.onAuthStateChange((_event, s) => { if (s) enterApp(s); });
+})();
+</script>
+</body>
+</html>
